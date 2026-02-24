@@ -680,24 +680,24 @@ body {
 
 /* 卡片样式 */
 .tile {
-    width: 80px;
-    height: 80px;
+    width: 70px;
+    height: 70px;
     position: absolute;
-    border-radius: 20px;
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 42px;
+    font-size: 36px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     /* 多层3D阴影 */
     box-shadow:
         /* 外部深阴影 - 营卡片浮起效果 */
-        0 12px 28px rgba(0,0,0,0.4),
-        0 6px 12px rgba(0,0,0,0.3),
+        0 10px 24px rgba(0,0,0,0.4),
+        0 5px 10px rgba(0,0,0,0.3),
         /* 卡片底部厚度 */
-        0 3px 0 0 rgba(0,0,0,0.2),
-        0 5px 0 0 rgba(0,0,0,0.1),
+        0 2px 0 0 rgba(0,0,0,0.2),
+        0 4px 0 0 rgba(0,0,0,0.1),
         /* 顶部内高光 */
         inset 0 2px 0 rgba(255,255,255,0.3),
         inset 0 1px 0 rgba(255,255,255,0.15),
@@ -1294,19 +1294,19 @@ body {
         font-size: 22px;
     }
     .tile {
-        width: 15vw;
-        height: 15vw;
-        font-size: 8vw;
+        width: 13vw;
+        height: 13vw;
+        font-size: 7vw;
         border-radius: 14px;
     }
     .slot {
-        font-size: 7.5vw;
+        font-size: 6.5vw;
         border-radius: 14px;
     }
     .tool-btn {
-        width: 16vw;
-        height: 16vw;
-        font-size: 6.5vw;
+        width: 14vw;
+        height: 14vw;
+        font-size: 6vw;
         border-radius: 12px;
     }
     .tool-btn .count {
@@ -1349,7 +1349,7 @@ body {
 /* 6.1英寸手机优化 (390-430px) */
 @media (min-width: 390px) and (max-width: 430px) {
     .tile {
-        width: 14vw;
+        width: 11.5vw;
         height: 14vw;
         font-size: 7.5vw;
     }
@@ -1573,8 +1573,8 @@ body {
 // ==================== 配置 ====================
 const CONFIG = {
     SLOT_COUNT: 7,
-    TILE_SIZE: 80,
-    GRID_SIZE: 60,
+    TILE_SIZE: 70,
+    GRID_SIZE: 45,
     LEVELS_COUNT: 3,
     STORAGE_PREFIX: 'horseRacing_',
     // Web3 配置
@@ -2313,16 +2313,16 @@ function layoutTiles(tiles, maxLayers) {
 }
 
 function updateBlockedStates() {
-    // 动态获取网格尺寸 - 使用卡片实际大小的一半作为检测阈值
-    let gridSize = CONFIG.TILE_SIZE / 2;
+    // 减小 gridSize 让更多卡片可点击 - 只有真正完全重叠的才被遮挡
+    let gridSize = CONFIG.TILE_SIZE / 3; // 从40改为约27px
 
-    // 移动端调整
+    // 移动端调整 - 更小的值
     if (window.innerWidth <= 480) {
-        gridSize = window.innerWidth * 0.06;
+        gridSize = window.innerWidth * 0.045; // 约17-19px
     } else if (window.innerWidth <= 400) {
-        gridSize = window.innerWidth * 0.065;
+        gridSize = window.innerWidth * 0.05;
     } else if (window.innerWidth <= 360) {
-        gridSize = window.innerWidth * 0.07;
+        gridSize = window.innerWidth * 0.055;
     }
 
     gameState.tiles.forEach(tile => {
@@ -2330,12 +2330,13 @@ function updateBlockedStates() {
 
         for (const other of gameState.tiles) {
             if (other.id === tile.id) continue;
+            // 只有上层的卡片能遮挡下层的
             if (other.layer <= tile.layer) continue;
 
             const dx = Math.abs(other.x - tile.x);
             const dy = Math.abs(other.y - tile.y);
 
-            // 只有真正重叠时才算遮挡
+            // 缩小遮挡范围，只有真正重叠时才算遮挡
             if (dx < gridSize && dy < gridSize) {
                 tile.blocked = true;
                 break;

@@ -1,0 +1,2237 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>马了个羊 - 堆叠消除</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+}
+body {
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    font-family: 'Fredoka', -apple-system, sans-serif;
+    overflow: hidden;
+    touch-action: manipulation;
+    position: relative;
+    color: #fff;
+}
+
+/* 背景动画 */
+.bg-pattern {
+    position: fixed;
+    inset: 0;
+    background-image:
+        radial-gradient(circle at 20% 30%, rgba(34, 139, 34, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(34, 139, 34, 0.03) 0%, transparent 50%);
+    z-index: 0;
+    animation: bgFloat 20s ease-in-out infinite;
+}
+@keyframes bgFloat {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.5; }
+}
+
+/* 星星背景 */
+.stars-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+.star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 3s ease-in-out infinite;
+}
+
+#app {
+    position: relative;
+    z-index: 1;
+    max-width: 600px;
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 关卡选择 */
+.level-select-screen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+.level-select-header {
+    text-align: center;
+    padding: 30px 0 20px;
+}
+.level-select-header h1 {
+    font-size: 48px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #ffd700, #ff6b00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 4px 20px rgba(255, 215, 0, 0.4));
+}
+.level-select-header p {
+    color: rgba(255,255,255,0.6);
+    font-size: 16px;
+}
+.level-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    padding: 10px 0;
+    overflow-y: auto;
+    flex: 1;
+}
+.level-btn {
+    aspect-ratio: 1;
+    border: none;
+    border-radius: 16px;
+    font-size: 24px;
+    font-weight: 700;
+    font-family: 'Fredoka', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+.level-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.level-btn:hover::before {
+    opacity: 1;
+}
+.level-btn.locked {
+    background: linear-gradient(145deg, #2a2a4a, #1a1a2e);
+    color: rgba(255,255,255,0.2);
+    box-shadow: inset 0 4px 10px rgba(0,0,0,0.3);
+}
+.level-btn.unlocked {
+    background: linear-gradient(145deg, #228b22, #32cd32);
+    color: #ffd700;
+    box-shadow: 0 6px 0 0 rgba(34, 139, 34, 0.3);
+}
+.level-btn.unlocked:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 10px 20px rgba(34, 139, 34, 0.5);
+}
+.level-btn.completed {
+    background: linear-gradient(145deg, #ffd700, #ff8c00);
+    color: #1a1a2e;
+    box-shadow: 0 6px 0 0 rgba(255, 215, 0, 0.4);
+}
+.level-btn .stars {
+    font-size: 10px;
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.level-btn .lock-icon {
+    font-size: 20px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.level-stats {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    padding: 15px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 16px;
+    margin-top: 15px;
+}
+.stat-item {
+    text-align: center;
+}
+.stat-item .value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #ffd700;
+    text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+}
+.stat-item .label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 4px;
+}
+
+/* 游戏界面 */
+.game-header {
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.menu-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.menu-btn:hover {
+    background: rgba(255,255,255,0.2);
+}
+.header-info {
+    display: flex;
+    gap: 12px;
+}
+.header-stat {
+    background: rgba(0,0,0,0.3);
+    padding: 8px 16px;
+    border-radius: 20px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+}
+.header-stat .value {
+    color: #ffd700;
+    font-weight: 700;
+}
+
+/* Web3 钱包按钮 */
+.wallet-btn {
+    background: linear-gradient(145deg, #f6851b, #e2761b);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s;
+    font-family: 'Fredoka', sans-serif;
+}
+.wallet-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(246, 133, 27, 0.4);
+}
+.wallet-btn.connected {
+    background: linear-gradient(145deg, #228B22, #32CD32);
+}
+.wallet-btn .wallet-icon {
+    width: 20px;
+    height: 20px;
+}
+.wallet-btn .wallet-address {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wallet-btn .wallet-balance {
+    font-size: 11px;
+    opacity: 0.8;
+}
+
+/* 链上积分面板 */
+.onchain-panel {
+    background: rgba(0,0,0,0.3);
+    border-radius: 16px;
+    padding: 15px;
+    margin: 15px 20px;
+    display: none;
+}
+.onchain-panel.active {
+    display: block;
+}
+.onchain-panel h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #ffd700;
+}
+.onchain-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+.onchain-stat {
+    background: rgba(255,255,255,0.05);
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+}
+.onchain-stat .value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #32CD32;
+}
+.onchain-stat .label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+}
+
+/* NFT 徽章展示 */
+.nft-gallery {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 10px 0;
+}
+.nft-badge {
+    min-width: 60px;
+    height: 60px;
+    background: linear-gradient(145deg, #2a2a4a, #1a1a2e);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    border: 2px solid rgba(255,215,0,0.3);
+    position: relative;
+}
+.nft-badge.legendary {
+    border-color: #ffd700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+}
+.nft-badge.epic {
+    border-color: #9B59B6;
+    box-shadow: 0 0 15px rgba(155, 89, 182, 0.4);
+}
+.nft-badge .level-num {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    background: #ff6b6b;
+    font-size: 10px;
+    padding: 2px 5px;
+    border-radius: 6px;
+    font-weight: 700;
+}
+
+/* 代币购买弹窗 */
+.buy-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    backdrop-filter: blur(15px);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.buy-modal.active {
+    display: flex;
+}
+.buy-content {
+    background: linear-gradient(145deg, #2a2a4a, #1a1a2e);
+    border-radius: 20px;
+    padding: 25px;
+    max-width: 320px;
+    width: 100%;
+    border: 2px solid rgba(255,215,0,0.2);
+}
+.buy-content h3 {
+    font-size: 22px;
+    margin-bottom: 5px;
+    color: #ffd700;
+}
+.buy-content .price {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 15px 0;
+    color: #32CD32;
+}
+.buy-content .desc {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 20px;
+}
+.buy-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.buy-option {
+    padding: 12px;
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.buy-option:hover {
+    border-color: rgba(255,215,0,0.5);
+    background: rgba(255,215,0,0.05);
+}
+.buy-option .token-icon {
+    font-size: 20px;
+}
+.buy-option .token-name {
+    font-size: 14px;
+    font-weight: 600;
+}
+.buy-option .token-amount {
+    font-size: 14px;
+    color: #32CD32;
+}
+
+/* 卡槽区域 */
+#slots-area {
+    padding: 10px 20px;
+}
+#slots-container {
+    background: linear-gradient(145deg, rgba(0,0,0,0.4), rgba(0,0,0,0.2));
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 12px 16px;
+    border: 2px solid rgba(255,255,255,0.1);
+    box-shadow:
+        inset 0 4px 20px rgba(0,0,0,0.3),
+        0 8px 32px rgba(0,0,0,0.2);
+}
+#slots {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+.slot {
+    aspect-ratio: 1;
+    background: rgba(255,255,255,0.05);
+    border-radius: 16px;
+    border: 2px dashed rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+.slot.filled {
+    background: linear-gradient(145deg, #ffffff, #f8f8f8);
+    border: 2px solid rgba(0,0,0,0.1);
+    box-shadow:
+        0 4px 8px rgba(0,0,0,0.15),
+        inset 0 2px 4px rgba(0,0,0,0.05);
+    animation: slotAppear 0.3s ease-out;
+}
+@keyframes slotAppear {
+    0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.slot.highlight {
+    animation: slotHighlight 0.4s ease-out;
+}
+@keyframes slotHighlight {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); box-shadow: 0 0 25px rgba(255, 215, 0, 0.8); }
+    100% { transform: scale(1); }
+}
+.slot::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border: 2px solid rgba(255,215,0,0.3);
+    border-radius: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.slot.filled::before {
+    opacity: 1;
+}
+
+/* 游戏区域 */
+#game-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+}
+
+@media (max-width: 400px) {
+    #game-area {
+        min-height: 45vh;
+    }
+}
+#tiles-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* 卡片样式 */
+.tile {
+    width: 80px;
+    height: 80px;
+    position: absolute;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow:
+        0 5px 10px rgba(0,0,0,0.25),
+        0 7px 0 0 rgba(0,0,0,0.12),
+        inset 0 -2px 4px rgba(255,255,255,0.3),
+        inset 0 2px 4px rgba(0,0,0,0.1);
+    will-change: transform;
+}
+.tile::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 8px;
+    background: inherit;
+    opacity: 0.3;
+}
+.tile:active {
+    transform: scale(0.92);
+}
+.tile.clickable {
+    cursor: pointer;
+    animation: tileFloat 2s ease-in-out infinite;
+}
+@keyframes tileFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+.tile.blocked {
+    cursor: not-allowed;
+    filter: brightness(0.5);
+    opacity: 0.8;
+}
+.tile.blocked::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 4px,
+        rgba(0,0,0,0.15) 4px,
+        rgba(0,0,0,0.15) 8px
+    );
+    border-radius: 10px;
+}
+
+/* 卡片类型样式 */
+.tile[data-type="horse"] {
+    background: linear-gradient(145deg, #8B4513, #A0522D);
+    box-shadow: 0 4px 8px rgba(139, 69, 19, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="carrot"] {
+    background: linear-gradient(145deg, #FF8C00, #FF6B00);
+    box-shadow: 0 4px 8px rgba(255, 140, 0, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="hay"] {
+    background: linear-gradient(145deg, #DAA520, #B8860B);
+    box-shadow: 0 4px 8px rgba(218, 165, 32, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="saddle"] {
+    background: linear-gradient(145deg, #654321, #8B4513);
+    box-shadow: 0 4px 8px rgba(101, 67, 33, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="whip"] {
+    background: linear-gradient(145deg, #8B0000, #A52A2A);
+    box-shadow: 0 4px 8px rgba(139, 0, 0, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="boot"] {
+    background: linear-gradient(145deg, #2F4F4F, #3A5F5F);
+    box-shadow: 0 4px 8px rgba(47, 79, 79, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="race"] {
+    background: linear-gradient(145deg, #228B22, #32CD32);
+    box-shadow: 0 4px 8px rgba(34, 205, 50, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="trophy"] {
+    background: linear-gradient(145deg, #FFD700, #FFA500);
+    box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="ticket"] {
+    background: linear-gradient(145deg, #4682B4, #5A9BD4);
+    box-shadow: 0 4px 8px rgba(70, 154, 212, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="coin"] {
+    background: linear-gradient(145deg, #FFD700, #FFC125);
+    box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="fence"] {
+    background: linear-gradient(145deg, #8B4513, #A0522D);
+    box-shadow: 0 4px 8px rgba(139, 69, 19, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="water"] {
+    background: linear-gradient(145deg, #1E90FF, #4169E1);
+    box-shadow: 0 4px 8px rgba(30, 144, 241, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="rider"] {
+    background: linear-gradient(145deg, #DC143C, #FF4500);
+    box-shadow: 0 4px 8px rgba(220, 20, 0, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="bell"] {
+    background: linear-gradient(145deg, #FFD700, #DAA520);
+    box-shadow: 0 4px 8px rgba(218, 165, 32, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="number"] {
+    background: linear-gradient(145deg, #FFFFFF, #F0F0F0);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(0,0,0,0.2);
+    color: #1a1a2e;
+}
+.tile[data-type="barn"] {
+    background: linear-gradient(145deg, #8B4513, #A0522D);
+    box-shadow: 0 4px 8px rgba(139, 69, 19, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="grass"] {
+    background: linear-gradient(145deg, #228B22, #2E8B57);
+    box-shadow: 0 4px 8px rgba(34, 139, 34, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="gate"] {
+    background: linear-gradient(145deg, #4A4A4A, #6A6A6A);
+    box-shadow: 0 4px 8px rgba(74, 74, 74, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.tile[data-type="stable"] {
+    background: linear-gradient(145deg, #8B4513, #A0522D);
+    box-shadow: 0 4px 8px rgba(139, 69, 19, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+
+/* 特殊卡片 */
+.tile.wild {
+    background: linear-gradient(145deg, #2d3436, #636e72) !important;
+    border: 3px solid #ffd700;
+    animation: wildPulse 1.5s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
+@keyframes wildPulse {
+    0%, 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.6); }
+}
+.tile.strong {
+    position: relative;
+}
+.tile.strong::after {
+    content: '🔒';
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    font-size: 12px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.tile.strong[data-strength="2"]::after {
+    content: '🔒🔒';
+    top: -2px;
+    right: -2px;
+    font-size: 10px;
+}
+
+/* 消除动画 */
+.tile.eliminating {
+    animation: tileEliminate 0.5s ease-out forwards;
+    pointer-events: none;
+}
+@keyframes tileEliminate {
+    0% { transform: scale(1) rotate(0deg); opacity: 1; }
+    50% { transform: scale(1.3) rotate(180deg); opacity: 0.8; }
+    100% { transform: scale(0) rotate(360deg); opacity: 0; }
+}
+
+/* 层级阴影效果 */
+.tile.layer-0 { z-index: 1; }
+.tile.layer-1 { z-index: 2; }
+.tile.layer-2 { z-index: 3; }
+.tile.layer-3 { z-index: 4; }
+.tile.layer-4 { z-index: 5; }
+.tile.layer-5 { z-index: 6; }
+.tile.layer-6 { z-index: 7; }
+
+/* 提示高亮效果 */
+.tile.hint-highlight {
+    animation: hintPulse 0.8s ease-in-out 3;
+    box-shadow: 0 0 30px rgba(155, 89, 182, 0.8), 0 0 60px rgba(155, 89, 182, 0.4);
+    z-index: 100 !important;
+}
+@keyframes hintPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+/* 道具区域 */
+#tools-area {
+    padding: 15px 20px 20px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+.tool-btn {
+    width: 58px;
+    height: 58px;
+    border: none;
+    border-radius: 14px;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    font-family: 'Fredoka', sans-serif;
+}
+.tool-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+.tool-btn:not(:disabled):hover {
+    transform: translateY(-4px);
+}
+.tool-btn:not(:disabled):active {
+    transform: translateY(0);
+}
+.tool-btn .count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #ff6b6b;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 6px;
+    border-radius: 8px;
+    min-width: 20px;
+    text-align: center;
+    font-family: 'Fredoka', sans-serif;
+}
+.tool-btn.primary {
+    background: linear-gradient(145deg, #228B22, #32CD32);
+    box-shadow: 0 4px 0 0 rgba(34, 205, 50, 0.3);
+}
+.tool-btn.warning {
+    background: linear-gradient(145deg, #DAA520, #FFC125);
+    box-shadow: 0 4px 0 0 rgba(218, 165, 32, 0.3);
+}
+.tool-btn.success {
+    background: linear-gradient(145deg, #4682B4, #5A9BD4);
+    box-shadow: 0 4px 0 0 rgba(70, 154, 212, 0.3);
+}
+.tool-btn.hint {
+    background: linear-gradient(145deg, #9B59B6, #8E44AD);
+    box-shadow: 0 4px 0 0 rgba(155, 89, 182, 0.3);
+}
+
+/* 弹窗 */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    backdrop-filter: blur(15px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.modal-overlay.active {
+    display: flex;
+    animation: modalFadeIn 0.3s ease-out;
+}
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.modal-content {
+    background: linear-gradient(145deg, #2a2a4a, #1a1a2e);
+    border-radius: 24px;
+    padding: 30px;
+    text-align: center;
+    max-width: 340px;
+    width: 100%;
+    border: 2px solid rgba(255,255,255,0.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    animation: modalPop 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes modalPop {
+    0% { transform: scale(0.7) translateY(20px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.modal-content h2 {
+    font-size: 36px;
+    margin-bottom: 10px;
+    font-family: 'Fredoka', sans-serif;
+}
+.modal-content h2.win {
+    color: #ffd700;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
+.modal-content h2.lose {
+    color: #ff6b6b;
+    text-shadow: 0 0 20px rgba(255, 107, 107, 0.4);
+}
+.modal-content p {
+    color: rgba(255,255,255,0.7);
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+.modal-stats {
+    background: rgba(0,0,0,0.2);
+    border-radius: 16px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+.modal-stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    font-size: 15px;
+}
+.modal-stat-row:last-child {
+    border-bottom: none;
+}
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+}
+.modal-btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Fredoka', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.modal-btn.primary {
+    background: linear-gradient(145deg, #ffd700, #ff8c00);
+    color: #1a1a2e;
+}
+.modal-btn.secondary {
+    background: rgba(255,255,255,0.1);
+    color: white;
+}
+.modal-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* 提示 */
+#toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: 'Fredoka', sans-serif;
+    z-index: 2000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+#toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* 连击显示 */
+#combo-display {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 52px;
+    font-weight: 700;
+    font-family: 'Fredoka', sans-serif;
+    color: #ffd700;
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+    pointer-events: none;
+    z-index: 500;
+    animation: comboFade 0.8s ease-out forwards;
+}
+@keyframes comboFade {
+    0% { transform: translate(-50%, -50%) scale(0) rotate(-10deg); opacity: 1; }
+    30% { transform: translate(-50%, -50%) scale(1.2) rotate(5deg); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 0; }
+}
+
+/* 粒子效果 */
+.particle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 999;
+    animation: particleFall 1s ease-out forwards;
+}
+@keyframes particleFall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100px) rotate(360deg); opacity: 0; }
+}
+
+/* 移动端适配 */
+@media (max-width: 400px) {
+    .tile {
+        width: 11vw;
+        height: 11vw;
+        font-size: 6vw;
+        border-radius: 12px;
+    }
+    .slot {
+        font-size: 5.5vw;
+        border-radius: 12px;
+    }
+    .level-select-header h1 {
+        font-size: 36px;
+    }
+    .tool-btn {
+        width: 13vw;
+        height: 13vw;
+        font-size: 5vw;
+    }
+    #slots-area {
+        padding: 8px 12px;
+    }
+    #slots {
+        gap: 6px;
+    }
+    .slot {
+        border-radius: 10px;
+    }
+    #tools-area {
+        padding: 10px 15px 15px;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 360px) {
+    .tile {
+        width: 12vw;
+        height: 12vw;
+        font-size: 6.5vw;
+    }
+    .slot {
+        font-size: 6vw;
+    }
+}
+</style>
+</head>
+<body>
+<div class="stars-bg" id="stars-bg"></div>
+<div class="bg-pattern"></div>
+
+<!-- 关卡选择界面 -->
+<div id="level-select" class="level-select-screen">
+    <div class="level-select-header">
+        <h1>🐴 马了个羊</h1>
+        <p>点击卡片自动进入卡槽，三连消除</p>
+    </div>
+    <div class="level-grid" id="level-grid"></div>
+
+    <!-- NFT 徽章展示 -->
+    <div class="onchain-panel active" id="nft-panel" style="display: none;">
+        <h3>🎖️ 我的 NFT 徽章</h3>
+        <div class="nft-gallery" id="nft-gallery">
+            <!-- 动态生成 NFT 徽章 -->
+        </div>
+    </div>
+
+    <div class="level-stats">
+        <div class="stat-item">
+            <div class="value" id="total-stars">0</div>
+            <div class="label">总星数</div>
+        </div>
+        <div class="stat-item">
+            <div class="value" id="completed-levels">0</div>
+            <div class="label">通关</div>
+        </div>
+    </div>
+</div>
+
+<!-- 游戏界面 -->
+<div id="app" style="display: none;">
+    <div class="game-header">
+        <button class="menu-btn" onclick="showLevelSelect()">☰</button>
+        <div class="header-info">
+            <div class="header-stat">
+                关卡 <span class="value" id="current-level">1</span>
+            </div>
+            <div class="header-stat">
+                步数 <span class="value" id="moves-count">0</span>
+            </div>
+        </div>
+        <button class="wallet-btn" id="wallet-btn" onclick="connectWallet()">
+            🦊 连接钱包
+        </button>
+    </div>
+
+    <!-- 链上积分面板 -->
+    <div class="onchain-panel" id="onchain-panel">
+        <h3>🏆 链上积分</h3>
+        <div class="onchain-stats">
+            <div class="onchain-stat">
+                <div class="value" id="onchain-score">0</div>
+                <div class="label">总积分</div>
+            </div>
+            <div class="onchain-stat">
+                <div class="value" id="onchain-rank">#--</div>
+                <div class="label">排名</div>
+            </div>
+        </div>
+        <div style="margin-top: 12px; font-size: 12px; color: rgba(255,255,255,0.5);">
+            NFT 徽章: <span id="nft-count">0</span> 个
+        </div>
+    </div>
+
+    <div id="slots-area">
+        <div id="slots-container">
+            <div id="slots"></div>
+        </div>
+    </div>
+
+    <div id="game-area">
+        <div id="tiles-container"></div>
+    </div>
+
+    <div id="tools-area">
+        <button class="tool-btn primary" id="tool-undo" onclick="handleToolClick('undo')">
+            ↩️
+            <span class="count" id="undo-count">3</span>
+        </button>
+        <button class="tool-btn warning" id="tool-shuffle" onclick="handleToolClick('shuffle')">
+            🔀
+            <span class="count" id="shuffle-count">2</span>
+        </button>
+        <button class="tool-btn success" id="tool-remove" onclick="handleToolClick('remove')">
+            📤
+            <span class="count" id="remove-count">1</span>
+        </button>
+        <button class="tool-btn hint" id="tool-hint" onclick="handleToolClick('hint')">
+            💡
+            <span class="count" id="hint-count">3</span>
+        </button>
+    </div>
+</div>
+
+<!-- 提示 -->
+<div id="toast"></div>
+
+<!-- 连击显示 -->
+<div id="combo-container"></div>
+
+<!-- 游戏结束弹窗 -->
+<div id="modal" class="modal-overlay">
+
+<!-- 代币购买弹窗 -->
+<div id="buy-modal" class="buy-modal">
+    <div class="buy-content">
+        <h3 id="buy-title">购买道具</h3>
+        <div class="price" id="buy-price">0.01 USDT</div>
+        <div class="desc" id="buy-desc">使用代币购买游戏道具</div>
+        <div class="buy-options">
+            <div class="buy-option" onclick="buyWithToken('USDT')">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="token-icon">💵</span>
+                    <span class="token-name">USDT</span>
+                </div>
+                <span class="token-amount" id="price-usdt">0.01</span>
+            </div>
+            <div class="buy-option" onclick="buyWithToken('ETH')">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="token-icon">⟠</span>
+                    <span class="token-name">ETH</span>
+                </div>
+                <span class="token-amount" id="price-eth">0.00001</span>
+            </div>
+        </div>
+        <button class="modal-btn secondary" style="width: 100%; margin-top: 15px;" onclick="closeBuyModal()">取消</button>
+    </div>
+</div>
+    <div class="modal-content">
+        <h2 id="modal-title">游戏结束</h2>
+        <p id="modal-message"></p>
+        <div class="modal-stats" id="modal-stats"></div>
+        <div class="modal-buttons">
+            <button class="modal-btn primary" onclick="nextLevel()">下一关</button>
+            <button class="modal-btn secondary" onclick="showLevelSelect()">返回</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==================== 配置 ====================
+const CONFIG = {
+    SLOT_COUNT: 7,
+    TILE_SIZE: 80,
+    GRID_SIZE: 60,
+    LEVELS_COUNT: 3,
+    STORAGE_PREFIX: 'horseRacing_',
+    // Web3 配置
+    WEB3: {
+        CHAIN_ID: '0x89', // Polygon 主网
+        CHAIN_NAME: 'Polygon',
+        RPC_URL: 'https://polygon-rpc.com',
+        NATIVE_CURRENCY: {
+            name: 'MATIC',
+            symbol: 'MATIC',
+            decimals: 18
+        },
+        // 道具价格（以最小单位计算）
+        PRICES: {
+            undo: 0.01,    // USDT
+            shuffle: 0.02,
+            remove: 0.05,
+            hint: 0.01
+        }
+    }
+};
+
+// ==================== Web3 钱包状态 ====================
+let web3State = {
+    isConnected: false,
+    account: null,
+    balance: 0,
+    chainId: null,
+    nftBadges: [],
+    onchainScore: 0
+};
+
+// ==================== 钱包连接 ====================
+async function connectWallet() {
+    // 检查是否安装 MetaMask
+    if (typeof window.ethereum === 'undefined') {
+        showToast('请先安装 MetaMask 钱包！');
+        window.open('https://metamask.io/download/', '_blank');
+        return;
+    }
+
+    try {
+        const accounts = await window.ethereum.request({
+            method: 'eth_requestAccounts'
+        });
+
+        if (accounts.length > 0) {
+            web3State.account = accounts[0];
+            web3State.isConnected = true;
+            web3State.chainId = await window.ethereum.request({
+                method: 'eth_chainId'
+            });
+
+            await updateWalletInfo();
+            setupWalletListeners();
+            showToast('钱包连接成功！');
+        }
+    } catch (error) {
+        console.error('钱包连接失败:', error);
+        if (error.code === 4001) {
+            showToast('用户拒绝了连接请求');
+        } else {
+            showToast('连接失败，请重试');
+        }
+    }
+}
+
+function setupWalletListeners() {
+    // 账户切换
+    window.ethereum.on('accountsChanged', (accounts) => {
+        if (accounts.length > 0) {
+            web3State.account = accounts[0];
+            updateWalletInfo();
+        } else {
+            web3State.isConnected = false;
+            web3State.account = null;
+            updateWalletButton();
+        }
+    });
+
+    // 链切换
+    window.ethereum.on('chainChanged', (chainId) => {
+        web3State.chainId = chainId;
+        window.location.reload();
+    });
+}
+
+async function updateWalletInfo() {
+    if (!web3State.isConnected) return;
+
+    // 获取余额
+    try {
+        const balance = await window.ethereum.request({
+            method: 'eth_getBalance',
+            params: [web3State.account, 'latest']
+        });
+        web3State.balance = parseInt(balance, 16) / 1e18; // 转换为 ETH
+    } catch (error) {
+        console.error('获取余额失败:', error);
+    }
+
+    updateWalletButton();
+    loadOnchainData();
+}
+
+function updateWalletButton() {
+    const btn = document.getElementById('wallet-btn');
+    if (web3State.isConnected) {
+        btn.classList.add('connected');
+        const shortAddress = `${web3State.account.slice(0, 6)}...${web3State.account.slice(-4)}`;
+        btn.innerHTML = `🦊 ${shortAddress}`;
+    } else {
+        btn.classList.remove('connected');
+        btn.innerHTML = '🦊 连接钱包';
+    }
+}
+
+// ==================== 链上数据 ====================
+async function loadOnchainData() {
+    // 从 localStorage 加载模拟的链上数据
+    // 实际项目中应该从智能合约读取
+    const savedData = localStorage.getItem(CONFIG.STORAGE_PREFIX + 'web3_' + web3State.account);
+    if (savedData) {
+        const data = JSON.parse(savedData);
+        web3State.nftBadges = data.nftBadges || [];
+        web3State.onchainScore = data.onchainScore || 0;
+    }
+
+    updateOnchainPanel();
+}
+
+async function saveOnchainData() {
+    if (!web3State.isConnected) return;
+
+    const data = {
+        nftBadges: web3State.nftBadges,
+        onchainScore: web3State.onchainScore,
+        account: web3State.account,
+        timestamp: Date.now()
+    };
+
+    localStorage.setItem(CONFIG.STORAGE_PREFIX + 'web3_' + web3State.account, JSON.stringify(data));
+}
+
+function updateOnchainPanel() {
+    if (!web3State.isConnected) return;
+
+    const panel = document.getElementById('onchain-panel');
+    panel.classList.add('active');
+
+    document.getElementById('onchain-score').textContent = web3State.onchainScore;
+    document.getElementById('nft-count').textContent = web3State.nftBadges.length;
+
+    // 更新 NFT 画廊
+    renderNFTGallery();
+}
+
+function renderNFTGallery() {
+    const gallery = document.getElementById('nft-gallery');
+    const panel = document.getElementById('nft-panel');
+
+    if (web3State.nftBadges.length > 0) {
+        panel.style.display = 'block';
+        gallery.innerHTML = web3State.nftBadges.map(badge => `
+            <div class="nft-badge ${badge.rarity}">
+                ${badge.emoji}
+                <span class="level-num">${badge.level}</span>
+            </div>
+        `).join('');
+    }
+}
+
+// ==================== NFT 徽章系统 ====================
+async function mintNFTBadge(level, stars) {
+    if (!web3State.isConnected) {
+        showToast('请先连接钱包！');
+        return false;
+    }
+
+    // 创建 NFT 徽章
+    const badge = {
+        id: `nft_${Date.now()}`,
+        level: level,
+        stars: stars,
+        emoji: stars === 3 ? '🏆' : stars === 2 ? '🥈' : '🥉',
+        rarity: stars === 3 ? 'legendary' : stars === 2 ? 'epic' : 'rare',
+        mintedAt: Date.now()
+    };
+
+    web3State.nftBadges.push(badge);
+
+    // 增加链上积分
+    const scoreToAdd = level * stars * 100;
+    web3State.onchainScore += scoreToAdd;
+
+    await saveOnchainData();
+    updateOnchainPanel();
+
+    showToast(`🎖️ 获得 ${stars} 星 NFT 徽章！+${scoreToAdd} 积分`);
+    return true;
+}
+
+// ==================== 代币支付系统 ====================
+let pendingTool = null;
+
+function openBuyModal(toolType) {
+    if (!web3State.isConnected) {
+        showToast('请先连接钱包！');
+        connectWallet();
+        return;
+    }
+
+    pendingTool = toolType;
+    const prices = CONFIG.WEB3.PRICES;
+    const price = prices[toolType];
+
+    const toolNames = {
+        undo: '撤销道具',
+        shuffle: '洗牌道具',
+        remove: '移出道具',
+        hint: '提示道具'
+    };
+
+    document.getElementById('buy-title').textContent = `购买 ${toolNames[toolType]}`;
+    document.getElementById('buy-price').textContent = `${price} USDT`;
+    document.getElementById('price-usdt').textContent = price;
+    document.getElementById('price-eth').textContent = (price / 2000).toFixed(6); // 假设 1 ETH = 2000 USDT
+
+    document.getElementById('buy-modal').classList.add('active');
+}
+
+function closeBuyModal() {
+    document.getElementById('buy-modal').classList.remove('active');
+    pendingTool = null;
+}
+
+async function buyWithToken(token) {
+    if (!pendingTool || !web3State.isConnected) return;
+
+    showToast('正在处理支付...');
+
+    // 模拟支付过程
+    // 实际项目中需要调用智能合约
+    setTimeout(() => {
+        const price = CONFIG.WEB3.PRICES[pendingTool];
+
+        // 增加道具数量
+        gameState.tools[pendingTool]++;
+
+        // 扣除模拟的余额
+        web3State.balance -= price * 0.0001; // 假设汇率
+
+        closeBuyModal();
+        updateTools();
+        updateWalletButton();
+
+        showToast(`支付成功！获得 1 个${pendingTool}道具`);
+
+        if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+    }, 1500);
+}
+
+// ==================== 原有代码 ====================
+const CONFIG = {
+    SLOT_COUNT: 7,
+    TILE_SIZE: 80,
+    GRID_SIZE: 60,
+    LEVELS_COUNT: 3,
+    STORAGE_PREFIX: 'horseRacing_'
+};
+
+// ==================== 马场主题卡片 ====================
+const TILE_TYPES = [
+    { id: 'horse', emoji: '🐴', name: '赛马' },
+    { id: 'carrot', emoji: '🥕', name: '胡萝卜' },
+    { id: 'hay', emoji: '🌾', name: '干草' },
+    { id: 'saddle', emoji: '🩺', name: '马鞍' },
+    { id: 'whip', emoji: '🎗️', name: '马鞭' },
+    { id: 'boot', emoji: '🧲', name: '马靴' },
+    { id: 'race', emoji: '🏇', name: '比赛' },
+    { id: 'trophy', emoji: '🏆', name: '奖杯' },
+    { id: 'ticket', emoji: '🎫', name: '门票' },
+    { id: 'coin', emoji: '💰', name: '金币' },
+    { id: 'fence', emoji: '🚧', name: '栅栏' },
+    { id: 'water', emoji: '💧', name: '水槽' },
+    { id: 'rider', emoji: '👨‍🌾', name: '骑师' },
+    { id: 'bell', emoji: '🔔', name: '铃铛' },
+    { id: 'number', emoji: '🔢', name: '号码布' },
+    { id: 'barn', emoji: '🏟️', name: '马厩' },
+    { id: 'grass', emoji: '🌿', name: '牧场' },
+    { id: 'gate', emoji: '🚪', name: '马门' },
+    { id: 'stable', emoji: '🏠️', name: '马房' }
+];
+
+// ==================== 关卡配置 ====================
+const LEVELS = [
+    // 第1关：教学关 - 简单入门
+    { level: 1, tiles: 21, types: 3, layers: 2, strong: 0, wild: 0 },
+    // 第2关：进阶关 - 增加难度
+    { level: 2, tiles: 30, types: 4, layers: 3, strong: 1, wild: 1 },
+    // 第3关：挑战关 - 最终挑战
+    { level: 3, tiles: 42, types: 5, layers: 4, strong: 2, wild: 2 }
+];
+
+// ==================== 游戏状态 ====================
+let gameState = {
+    tiles: [],
+    slots: [],
+    currentLevel: 1,
+    moves: 0,
+    combo: 0,
+    maxCombo: 0,
+    totalMatches: 0,
+    isGameOver: false,
+    tools: { undo: 3, shuffle: 2, remove: 1 },
+    history: []
+};
+
+let playerProgress = {
+    completedLevels: {},
+    totalStars: 0
+};
+
+const elements = {
+    levelSelect: null,
+    levelGrid: null,
+    app: null,
+    slotsContainer: null,
+    tilesContainer: null,
+    modal: null,
+    starsBg: null
+};
+
+// ==================== 音效系统 ====================
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+const SOUNDS = {
+    click: { freq: 600, duration: 0.1, type: 'sine' },
+    match: { freq: 800, duration: 0.15, type: 'sine' },
+    combo: { freq: 1000, duration: 0.2, type: 'sine' },
+    win: { freq: 523, duration: 0.5, type: 'triangle' },
+    lose: { freq: 200, duration: 0.4, type: 'sawtooth' },
+    hint: { freq: 700, duration: 0.15, type: 'sine' },
+    undo: { freq: 400, duration: 0.1, type: 'sine' },
+    shuffle: { freq: 500, duration: 0.15, type: 'triangle' }
+};
+
+function playSound(soundName) {
+    try {
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+
+        const sound = SOUNDS[soundName];
+        if (!sound) return;
+
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.type = sound.type;
+        oscillator.frequency.setValueAtTime(sound.freq, audioContext.currentTime);
+
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + sound.duration);
+
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + sound.duration);
+
+        // 特殊音效处理
+        if (soundName === 'win') {
+            setTimeout(() => playNote(659), 100);
+            setTimeout(() => playNote(784), 200);
+        }
+    } catch (e) {
+        // 音效播放失败，静默处理
+    }
+}
+
+function playNote(freq) {
+    try {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (e) {}
+}
+
+// ==================== 初始化 ====================
+function init() {
+    elements.levelSelect = document.getElementById('level-select');
+    elements.levelGrid = document.getElementById('level-grid');
+    elements.app = document.getElementById('app');
+    elements.slotsContainer = document.getElementById('slots');
+    elements.tilesContainer = document.getElementById('tiles-container');
+    elements.modal = document.getElementById('modal');
+    elements.starsBg = document.getElementById('stars-bg');
+
+    loadProgress();
+    createStars();
+    showLevelSelect();
+}
+
+function createStars() {
+    for (let i = 0; i < 50; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.width = (Math.random() * 2 + 1) + 'px';
+        star.style.height = star.style.width;
+        star.style.animationDelay = Math.random() * 3 + 's';
+        elements.starsBg.appendChild(star);
+    }
+}
+
+function loadProgress() {
+    const saved = localStorage.getItem(CONFIG.STORAGE_PREFIX + 'progress');
+    if (saved) {
+        playerProgress = JSON.parse(saved);
+    }
+}
+
+function saveProgress() {
+    localStorage.setItem(CONFIG.STORAGE_PREFIX + 'progress', JSON.stringify(playerProgress));
+}
+
+// ==================== 关卡选择 ====================
+function showLevelSelect() {
+    elements.modal.classList.remove('active');
+    elements.app.style.display = 'none';
+    elements.levelSelect.style.display = 'flex';
+    renderLevelGrid();
+    updateLevelStats();
+}
+
+function renderLevelGrid() {
+    const fragment = document.createDocumentFragment();
+
+    for (let i = 1; i <= CONFIG.LEVELS_COUNT; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'level-btn';
+
+        const levelData = LEVELS[i - 1];
+        const isUnlocked = i === 1 || playerProgress.completedLevels[i - 1];
+        const isCompleted = playerProgress.completedLevels[i];
+
+        if (!isUnlocked) {
+            btn.classList.add('locked');
+            btn.innerHTML = '<span class="lock-icon">🔒</span>';
+        } else if (isCompleted) {
+            btn.classList.add('completed');
+            btn.textContent = i;
+            const stars = isCompleted.stars || 1;
+            btn.innerHTML = `${i}<div class="stars">${'⭐'.repeat(stars)}</div>`;
+        } else {
+            btn.classList.add('unlocked');
+            btn.textContent = i;
+        }
+
+        btn.onclick = () => {
+            if (isUnlocked) {
+                startLevel(i);
+            } else {
+                showToast('先完成前面的关卡！');
+            }
+        };
+
+        fragment.appendChild(btn);
+    }
+
+    elements.levelGrid.innerHTML = '';
+    elements.levelGrid.appendChild(fragment);
+}
+
+function updateLevelStats() {
+    const completedCount = Object.keys(playerProgress.completedLevels).length;
+    let totalStars = 0;
+    Object.values(playerProgress.completedLevels).forEach(data => {
+        totalStars += data.stars || 1;
+    });
+
+    document.getElementById('total-stars').textContent = totalStars;
+    document.getElementById('completed-levels').textContent = completedCount;
+}
+
+// ==================== 开始关卡 ====================
+function startLevel(levelNum) {
+    gameState.currentLevel = levelNum;
+    const levelData = LEVELS[levelNum - 1];
+
+    gameState.moves = 0;
+    gameState.combo = 0;
+    gameState.maxCombo = 0;
+    gameState.totalMatches = 0;
+    gameState.isGameOver = false;
+    gameState.history = [];
+    gameState.tools = { undo: 3, shuffle: 2, remove: 1, hint: 3 };
+    gameState.slots = new Array(CONFIG.SLOT_COUNT).fill(null);
+
+    generateLevelTiles(levelData);
+
+    elements.levelSelect.style.display = 'none';
+    elements.app.style.display = 'flex';
+
+    document.getElementById('current-level').textContent = levelNum;
+    document.getElementById('moves-count').textContent = '0';
+
+    renderSlots();
+    renderTiles();
+    updateTools();
+}
+
+function generateLevelTiles(levelData) {
+    const tiles = [];
+    const availableTypes = TILE_TYPES.slice(0, levelData.types);
+
+    // 确保每组都是3的倍数，保证可解性
+    const totalTilesNeeded = levelData.tiles - levelData.wild; // 减去wild卡片
+    const typesCount = availableTypes.length;
+    const tilesPerType = Math.floor(totalTilesNeeded / typesCount / 3) * 3;
+
+    // 为每个类型生成3的倍数张卡片
+    for (const type of availableTypes) {
+        for (let i = 0; i < tilesPerType; i++) {
+            tiles.push({
+                id: `tile_${Date.now()}_${Math.random()}`,
+                type: type.id,
+                emoji: type.emoji,
+                layer: 0,
+                x: 0,
+                y: 0,
+                blocked: false,
+                special: null
+            });
+        }
+    }
+
+    // 如果还需要更多卡片，添加完整的3张一组
+    let remainingTiles = totalTilesNeeded - tiles.length;
+    let typeIndex = 0;
+    while (remainingTiles >= 3) {
+        const type = availableTypes[typeIndex % typesCount];
+        for (let i = 0; i < 3; i++) {
+            tiles.push({
+                id: `tile_${Date.now()}_${Math.random()}`,
+                type: type.id,
+                emoji: type.emoji,
+                layer: 0,
+                x: 0,
+                y: 0,
+                blocked: false,
+                special: null
+            });
+        }
+        remainingTiles -= 3;
+        typeIndex++;
+    }
+
+    // 洗牌
+    for (let i = tiles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+    }
+
+    // 添加特殊卡片
+    for (let i = 0; i < levelData.strong; i++) {
+        const randomIdx = Math.floor(Math.random() * tiles.length);
+        tiles[randomIdx].special = 'strong';
+        tiles[randomIdx].strength = Math.random() > 0.5 ? 2 : 1;
+    }
+
+    for (let i = 0; i < levelData.wild; i++) {
+        const type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+        tiles.push({
+            id: `tile_${Date.now()}_${Math.random()}`,
+            type: type.id,
+            emoji: '🃏',
+            layer: 0,
+            x: 0,
+            y: 0,
+            blocked: false,
+            special: 'wild'
+        });
+    }
+
+    layoutTiles(tiles, levelData.layers);
+    gameState.tiles = tiles;
+}
+
+function layoutTiles(tiles, maxLayers) {
+    const container = elements.tilesContainer;
+    const rect = container.getBoundingClientRect();
+
+    // 动态获取卡片尺寸
+    let tileSize = CONFIG.TILE_SIZE;
+    if (window.innerWidth <= 400) {
+        tileSize = window.innerWidth * 0.11; // 移动端使用 vw
+    } else if (window.innerWidth <= 360) {
+        tileSize = window.innerWidth * 0.12; // 小屏手机
+    }
+
+    const centerX = (rect.width || 340) / 2 - tileSize / 2;
+    const centerY = (rect.height || 380) / 2 - tileSize / 2;
+
+    // 使用改进的螺旋布局，减少重叠
+    const baseSpacing = tileSize + 4;
+    const tilesPerLayer = Math.ceil(tiles.length / maxLayers);
+
+    tiles.forEach((tile, index) => {
+        const layer = Math.floor(index / tilesPerLayer);
+        const posInLayer = index % tilesPerLayer;
+        const totalInLayer = Math.min(tilesPerLayer, tiles.length - layer * tilesPerLayer);
+
+        // 螺旋布局
+        const angle = (posInLayer / totalInLayer) * Math.PI * 2;
+        const layerOffset = layer * 12;
+        const radius = layerOffset + Math.sqrt(posInLayer) * baseSpacing * 0.8;
+
+        tile.x = centerX + Math.cos(angle) * radius - CONFIG.TILE_SIZE / 2;
+        tile.y = centerY + Math.sin(angle) * radius * 0.7 - CONFIG.TILE_SIZE / 2;
+        tile.layer = Math.min(layer, maxLayers - 1);
+    });
+
+    updateBlockedStates();
+}
+
+function updateBlockedStates() {
+    // 动态获取网格尺寸
+    let gridSize = CONFIG.GRID_SIZE;
+    if (window.innerWidth <= 400) {
+        gridSize = window.innerWidth * 0.08;
+    } else if (window.innerWidth <= 360) {
+        gridSize = window.innerWidth * 0.09;
+    }
+
+    gameState.tiles.forEach(tile => {
+        tile.blocked = false;
+
+        for (const other of gameState.tiles) {
+            if (other.id === tile.id) continue;
+            if (other.layer <= tile.layer) continue;
+
+            const dx = Math.abs(other.x - tile.x);
+            const dy = Math.abs(other.y - tile.y);
+
+            if (dx < gridSize && dy < gridSize) {
+                tile.blocked = true;
+                break;
+            }
+        }
+    });
+}
+
+// ==================== 渲染 ====================
+function renderTiles() {
+    // 使用DocumentFragment批量插入，提高性能
+    const fragment = document.createDocumentFragment();
+    const sortedTiles = [...gameState.tiles].sort((a, b) => a.layer - b.layer);
+
+    sortedTiles.forEach(tile => {
+        const el = document.createElement('div');
+        el.className = `tile layer-${tile.layer}`;
+        el.style.left = tile.x + 'px';
+        el.style.top = tile.y + 'px';
+        el.dataset.type = tile.type;
+        el.dataset.id = tile.id;
+        el.textContent = tile.emoji;
+
+        if (tile.special === 'wild') {
+            el.classList.add('wild');
+        }
+        if (tile.special === 'strong') {
+            el.classList.add('strong');
+            el.dataset.strength = tile.strength;
+        }
+
+        if (tile.blocked) {
+            el.classList.add('blocked');
+        } else {
+            el.classList.add('clickable');
+        }
+
+        el.onclick = () => handleTileClick(tile);
+        fragment.appendChild(el);
+    });
+
+    elements.tilesContainer.innerHTML = '';
+    elements.tilesContainer.appendChild(fragment);
+}
+
+function renderSlots() {
+    // 使用DocumentFragment批量插入
+    const fragment = document.createDocumentFragment();
+
+    for (let i = 0; i < CONFIG.SLOT_COUNT; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'slot';
+
+        if (gameState.slots[i]) {
+            slot.classList.add('filled');
+            slot.textContent = gameState.slots[i].emoji;
+            if (gameState.slots[i].special === 'wild') {
+                slot.classList.add('wild');
+            }
+        }
+
+        fragment.appendChild(slot);
+    }
+
+    elements.slotsContainer.innerHTML = '';
+    elements.slotsContainer.appendChild(fragment);
+}
+
+function updateTools() {
+    document.getElementById('undo-count').textContent = gameState.tools.undo;
+    document.getElementById('shuffle-count').textContent = gameState.tools.shuffle;
+    document.getElementById('remove-count').textContent = gameState.tools.remove;
+    document.getElementById('hint-count').textContent = gameState.tools.hint;
+
+    // 道具用完时显示不同的样式，但不禁用（可以购买）
+    const undoBtn = document.getElementById('tool-undo');
+    const shuffleBtn = document.getElementById('tool-shuffle');
+    const removeBtn = document.getElementById('tool-remove');
+    const hintBtn = document.getElementById('tool-hint');
+
+    undoBtn.disabled = false;
+    shuffleBtn.disabled = false;
+    removeBtn.disabled = false;
+    hintBtn.disabled = false;
+
+    // 道具用完时改变透明度提示用户
+    undoBtn.style.opacity = gameState.tools.undo > 0 ? '1' : '0.5';
+    shuffleBtn.style.opacity = gameState.tools.shuffle > 0 ? '1' : '0.5';
+    removeBtn.style.opacity = gameState.tools.remove > 0 ? '1' : '0.5';
+    hintBtn.style.opacity = gameState.tools.hint > 0 ? '1' : '0.5';
+}
+
+// ==================== 交互 ====================
+function handleTileClick(tile) {
+    if (gameState.isGameOver || tile.blocked) return;
+
+    if (tile.special === 'strong') {
+        tile.strength--;
+        if (tile.strength > 0) {
+            if (navigator.vibrate) navigator.vibrate(30);
+            playSound('click');
+            showToast('还需点击 ' + tile.strength + ' 次');
+            renderTiles();
+            return;
+        }
+    }
+
+    playSound('click');
+
+    saveHistory();
+
+    const emptySlotIndex = gameState.slots.findIndex(s => s === null);
+    if (emptySlotIndex === -1) {
+        showToast('卡槽已满！');
+        return;
+    }
+
+    gameState.tiles = gameState.tiles.filter(t => t.id !== tile.id);
+    gameState.slots[emptySlotIndex] = tile;
+    gameState.moves++;
+
+    document.getElementById('moves-count').textContent = gameState.moves;
+
+    updateBlockedStates();
+    renderTiles();
+    renderSlots();
+
+    setTimeout(() => checkMatches(), 80);
+}
+
+function saveHistory() {
+    gameState.history.push({
+        tiles: JSON.parse(JSON.stringify(gameState.tiles)),
+        slots: [...gameState.slots],
+        moves: gameState.moves
+    });
+
+    if (gameState.history.length > 10) {
+        gameState.history.shift();
+    }
+}
+
+function checkMatches() {
+    let foundMatch = false;
+    gameState.combo = 0;
+
+    for (let i = 0; i < gameState.slots.length - 2; i++) {
+        if (!gameState.slots[i] || !gameState.slots[i + 1] || !gameState.slots[i + 2]) continue;
+
+        const s1 = gameState.slots[i];
+        const s2 = gameState.slots[i + 1];
+        const s3 = gameState.slots[i + 2];
+
+        const normalIds = [s1, s2, s3]
+            .filter(s => s.special !== 'wild')
+            .map(s => s.type);
+
+        let isMatch = false;
+        if (normalIds.length === 0) {
+            isMatch = true;
+        } else {
+            isMatch = normalIds.every(id => id === normalIds[0]);
+        }
+
+        if (isMatch) {
+            gameState.combo++;
+            if (gameState.combo > gameState.maxCombo) {
+                gameState.maxCombo = gameState.combo;
+            }
+            gameState.totalMatches++;
+
+            playSound('match');
+            if (navigator.vibrate) navigator.vibrate([25, 40, 25]);
+
+            if (gameState.combo >= 2) {
+                playSound('combo');
+                showCombo(gameState.combo);
+            }
+
+            // 消除动画
+            for (let j = 0; j < 3; j++) {
+                const slotEl = elements.slotsContainer.children[i + j];
+                if (slotEl) {
+                    slotEl.style.animation = 'none';
+                    slotEl.offsetHeight;
+                    slotEl.style.animation = 'tileEliminate 0.5s ease-out forwards';
+                }
+            }
+
+            gameState.slots[i] = null;
+            gameState.slots[i + 1] = null;
+            gameState.slots[i + 2] = null;
+
+            renderSlots();
+            foundMatch = true;
+            createParticles();
+            break;
+        }
+    }
+
+    checkGameOver();
+
+    if (foundMatch && !gameState.isGameOver) {
+        setTimeout(() => checkMatches(), 150);
+    }
+}
+
+function showCombo(count) {
+    const comboEl = document.createElement('div');
+    comboEl.id = 'combo-display';
+    comboEl.textContent = count + '连击! 🏇';
+    document.body.appendChild(comboEl);
+    setTimeout(() => comboEl.remove(), 800);
+}
+
+function createParticles() {
+    for (let i = 0; i < 12; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.textContent = ['✨', '⭐', '🏇', '💫'][Math.floor(Math.random() * 4)];
+        particle.style.left = (50 + (Math.random() - 0.5) * 40) + '%';
+        particle.style.top = (50 + (Math.random() - 0.5) * 40) + '%';
+        particle.style.fontSize = (12 + Math.random() * 16) + 'px';
+        document.body.appendChild(particle);
+        setTimeout(() => particle.remove(), 1000);
+    }
+}
+
+function checkGameOver() {
+    if (gameState.tiles.length === 0 && gameState.slots.every(s => s === null)) {
+        gameState.isGameOver = true;
+        showModal(true);
+        return;
+    }
+
+    if (gameState.slots.every(s => s !== null)) {
+        gameState.isGameOver = true;
+        showModal(false);
+        return;
+    }
+}
+
+function showModal(isWin) {
+    const title = document.getElementById('modal-title');
+    const message = document.getElementById('modal-message');
+    const stats = document.getElementById('modal-stats');
+
+    if (isWin) {
+        title.textContent = '🏆 恭喜通关！';
+        title.className = 'win';
+        message.textContent = '成功消除所有卡片！';
+
+        let stars = 1;
+        const levelData = LEVELS[gameState.currentLevel - 1];
+        if (gameState.moves <= levelData.tiles * 0.8) stars = 3;
+        else if (gameState.moves <= levelData.tiles * 0.9) stars = 2;
+
+        playerProgress.completedLevels[gameState.currentLevel] = {
+            stars: Math.max(stars, playerProgress.completedLevels[gameState.currentLevel]?.stars || 0)
+        };
+        saveProgress();
+
+        stats.innerHTML = `
+            <div class="modal-stat-row"><span>⭐ 星级评价</span><span>${'⭐'.repeat(stars)}</span></div>
+            <div class="modal-stat-row"><span>👆 使用步数</span><span>${gameState.moves}</span></div>
+            <div class="modal-stat-row"><span>🏇 最高连击</span><span>${gameState.maxCombo}x</span></div>
+            <div class="modal-stat-row"><span>✨ 消除次数</span><span>${gameState.totalMatches}</span></div>
+        `;
+
+        // 铸造 NFT 徽章（如果已连接钱包）
+        if (web3State.isConnected) {
+            setTimeout(() => {
+                mintNFTBadge(gameState.currentLevel, stars);
+            }, 500);
+        }
+
+        playSound('win');
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
+    } else {
+        playSound('lose');
+        title.textContent = '😢 再接再厉';
+        title.className = 'lose';
+        message.textContent = '卡槽已满，试试使用道具！';
+
+        stats.innerHTML = `
+            <div class="modal-stat-row"><span>👆 使用步数</span><span>${gameState.moves}</span></div>
+            <div class="modal-stat-row"><span>🏇 最高连击</span><span>${gameState.maxCombo}x</span></div>
+            <div class="modal-stat-row"><span>📊 剩余卡片</span><span>${gameState.tiles.length}</span></div>
+        `;
+    }
+
+    elements.modal.classList.add('active');
+}
+
+function nextLevel() {
+    if (gameState.currentLevel < CONFIG.LEVELS_COUNT) {
+        startLevel(gameState.currentLevel + 1);
+    } else {
+        showLevelSelect();
+    }
+}
+
+// ==================== 道具 ====================
+function handleToolClick(toolType) {
+    if (gameState.tools[toolType] > 0) {
+        useTool(toolType);
+    } else {
+        openBuyModal(toolType);
+    }
+}
+
+function useTool(toolType) {
+    if (gameState.isGameOver) return;
+
+    switch (toolType) {
+        case 'undo':
+            if (gameState.history.length > 0 && gameState.tools.undo > 0) {
+                const lastState = gameState.history.pop();
+                gameState.tiles = lastState.tiles;
+                gameState.slots = lastState.slots;
+                gameState.moves = lastState.moves;
+                gameState.tools.undo--;
+
+                playSound('undo');
+                updateBlockedStates();
+                renderTiles();
+                renderSlots();
+                updateTools();
+                document.getElementById('moves-count').textContent = gameState.moves;
+                showToast('已撤销');
+            }
+            break;
+
+        case 'shuffle':
+            if (gameState.tools.shuffle > 0) {
+                const clickableTiles = gameState.tiles.filter(t => !t.blocked);
+                const positions = clickableTiles.map(t => ({ x: t.x, y: t.y, layer: t.layer }));
+
+                for (let i = positions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [positions[i], positions[j]] = [positions[j], positions[i]];
+                }
+
+                clickableTiles.forEach((tile, i) => {
+                    tile.x = positions[i].x;
+                    tile.y = positions[i].y;
+                    tile.layer = positions[i].layer;
+                });
+
+                gameState.tools.shuffle--;
+
+                playSound('shuffle');
+                updateBlockedStates();
+                renderTiles();
+                updateTools();
+                showToast('已重新洗牌');
+            }
+            break;
+
+        case 'remove':
+            if (gameState.tools.remove > 0) {
+                const clickableTiles = gameState.tiles.filter(t => !t.blocked).slice(0, 3);
+                const emptySlots = [];
+
+                for (let i = 0; i < CONFIG.SLOT_COUNT; i++) {
+                    if (!gameState.slots[i]) emptySlots.push(i);
+                }
+
+                const toRemove = Math.min(clickableTiles.length, emptySlots.length);
+
+                for (let i = 0; i < toRemove; i++) {
+                    const tile = clickableTiles[i];
+                    gameState.slots[emptySlots[i]] = tile;
+                    gameState.tiles = gameState.tiles.filter(t => t.id !== tile.id);
+                }
+
+                gameState.tools.remove--;
+                updateBlockedStates();
+                renderTiles();
+                renderSlots();
+                updateTools();
+                showToast('已移出 ' + toRemove + ' 个卡片');
+
+                setTimeout(() => checkMatches(), 80);
+            }
+            break;
+
+        case 'hint':
+            if (gameState.tools.hint > 0) {
+                showHint();
+                gameState.tools.hint--;
+                updateTools();
+            }
+            break;
+    }
+
+    if (navigator.vibrate) navigator.vibrate(30);
+}
+
+// ==================== 提示系统 ====================
+function showHint() {
+    // 移除旧的高亮
+    document.querySelectorAll('.tile.hint-highlight').forEach(el => {
+        el.classList.remove('hint-highlight');
+    });
+
+    const clickableTiles = gameState.tiles.filter(t => !t.blocked);
+    if (clickableTiles.length === 0) {
+        showToast('没有可点击的卡片');
+        return;
+    }
+
+    // 分析当前卡槽状态
+    const slotCounts = {};
+    gameState.slots.forEach(slot => {
+        if (slot && slot.special !== 'wild') {
+            slotCounts[slot.type] = (slotCounts[slot.type] || 0) + 1;
+        }
+    });
+
+    // 找出卡槽中已有1-2张的相同类型
+    let bestType = null;
+    let bestCount = 0;
+    for (const [type, count] of Object.entries(slotCounts)) {
+        if (count > bestCount && count < 3) {
+            bestCount = count;
+            bestType = type;
+        }
+    }
+
+    // 找出对应的可点击卡片
+    let hintTiles = [];
+    if (bestType) {
+        hintTiles = clickableTiles.filter(t => t.type === bestType);
+    }
+
+    // 如果没有找到或者卡槽为空，找场上数量最多的类型
+    if (hintTiles.length === 0) {
+        const tileCounts = {};
+        clickableTiles.forEach(t => {
+            if (t.special !== 'wild') {
+                tileCounts[t.type] = (tileCounts[t.type] || 0) + 1;
+            }
+        });
+
+        let maxCount = 0;
+        for (const [type, count] of Object.entries(tileCounts)) {
+            if (count > maxCount) {
+                maxCount = count;
+                bestType = type;
+            }
+        }
+
+        hintTiles = clickableTiles.filter(t => t.type === bestType);
+    }
+
+    // 高亮最多3张卡片
+    const tilesToHighlight = hintTiles.slice(0, 3);
+    tilesToHighlight.forEach(tile => {
+        const tileEl = document.querySelector(`.tile[data-id="${tile.id}"]`);
+        if (tileEl) {
+            tileEl.classList.add('hint-highlight');
+        }
+    });
+
+    // 播放提示音
+    playSound('hint');
+
+    showToast('试试点击高亮的卡片');
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+// ==================== 启动 ====================
+init();
+</script>
+</body>
+</html>

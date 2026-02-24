@@ -1349,51 +1349,64 @@ body {
 /* 6.1英寸手机优化 (390-430px) */
 @media (min-width: 390px) and (max-width: 430px) {
     .tile {
-        width: 11.5vw;
+        width: 11vw;
+        height: 11vw;
+        font-size: 6vw;
+    }
+    .slot {
+        font-size: 5.5vw;
+    }
+    .tool-btn {
+        width: 12vw;
+        height: 12vw;
+        font-size: 5vw;
+    }
+    #game-area {
+        min-height: 32vh;
+        max-height: 42vh;
+    }
+    #tools-area {
+        padding: 6px 10px 14px;
+    }
+    .level-select-header h1 {
+        font-size: 36px;
+    }
+}
+
+@media (max-width: 375px) {
+    .tile {
+        width: 14vw;
         height: 14vw;
+        font-size: 7vw;
+    }
+    .slot {
+        font-size: 6.5vw;
+    }
+    .tool-btn {
+        width: 14vw;
+        height: 14vw;
+    }
+    .level-select-header h1 {
+        font-size: 30px;
+    }
+    #game-area {
+        min-height: 30vh;
+        max-height: 40vh;
+    }
+}
+
+@media (max-width: 360px) {
+    .tile {
+        width: 15vw;
+        height: 15vw;
         font-size: 7.5vw;
     }
     .slot {
         font-size: 7vw;
     }
     .tool-btn {
-        width: 15vw;
-        height: 15vw;
-    }
-    #game-area {
-        min-height: 38vh;
-    }
-    .level-select-header h1 {
-        font-size: 40px;
-    }
-}
-
-@media (max-width: 375px) {
-    .tile {
-        width: 16vw;
-        height: 16vw;
-        font-size: 8.5vw;
-    }
-    .slot {
-        font-size: 8vw;
-    }
-    .level-select-header h1 {
-        font-size: 32px;
-    }
-}
-
-@media (max-width: 360px) {
-    .tile {
-        width: 17vw;
-        height: 17vw;
-        font-size: 9vw;
-    }
-    .slot {
-        font-size: 8.5vw;
-    }
-    .tool-btn {
-        width: 17vw;
-        height: 17vw;
+        width: 14vw;
+        height: 14vw;
     }
 }
 </style>

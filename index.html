@@ -2048,6 +2048,19 @@ function init() {
     elements.starsBg = document.getElementById('stars-bg');
     elements.startScreen = document.getElementById('start-screen');
 
+    // 设置卡片点击事件委托（只设置一次）
+    elements.tilesContainer.onclick = function(e) {
+        const tileEl = e.target.closest('.tile');
+        if (!tileEl) return;
+
+        const tileId = tileEl.dataset.id;
+        const tile = gameState.tiles.find(t => t.id === tileId);
+
+        if (tile) {
+            handleTileClick(tile);
+        }
+    };
+
     loadProgress();
     createStars();
     showStartScreen();
@@ -2372,19 +2385,6 @@ function renderTiles() {
 
     elements.tilesContainer.innerHTML = '';
     elements.tilesContainer.appendChild(fragment);
-
-    // 使用事件委托处理点击
-    elements.tilesContainer.onclick = function(e) {
-        const tileEl = e.target.closest('.tile');
-        if (!tileEl) return;
-
-        const tileId = tileEl.dataset.id;
-        const tile = gameState.tiles.find(t => t.id === tileId);
-
-        if (tile) {
-            handleTileClick(tile);
-        }
-    };
 }
 
 function renderSlots() {

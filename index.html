@@ -2332,7 +2332,7 @@ function renderTiles() {
     const fragment = document.createDocumentFragment();
     const sortedTiles = [...gameState.tiles].sort((a, b) => a.layer - b.layer);
 
-    sortedTiles.forEach((tile, index) => {
+    sortedTiles.forEach(tile => {
         const el = document.createElement('div');
         el.className = `tile layer-${tile.layer}`;
 
@@ -2367,20 +2367,24 @@ function renderTiles() {
             tile.isNew = false;
         }
 
-        // 使用闭包绑定正确的 tile
-        el.onclick = (function(currentTile) {
-            return function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                handleTileClick(currentTile);
-            };
-        })(tile);
-
         fragment.appendChild(el);
     });
 
     elements.tilesContainer.innerHTML = '';
     elements.tilesContainer.appendChild(fragment);
+
+    // 使用事件委托处理点击
+    elements.tilesContainer.onclick = function(e) {
+        const tileEl = e.target.closest('.tile');
+        if (!tileEl) return;
+
+        const tileId = tileEl.dataset.id;
+        const tile = gameState.tiles.find(t => t.id === tileId);
+
+        if (tile) {
+            handleTileClick(tile);
+        }
+    };
 }
 
 function renderSlots() {

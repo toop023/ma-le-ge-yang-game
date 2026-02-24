@@ -2314,18 +2314,16 @@ function layoutTiles(tiles, maxLayers) {
 
 function updateBlockedStates() {
     // 动态获取网格尺寸 - 使用卡片实际大小的一半作为检测阈值
-    let gridSize = CONFIG.TILE_SIZE / 2; // 从60改为40（80/2）
+    let gridSize = CONFIG.TILE_SIZE / 2;
 
     // 移动端调整
     if (window.innerWidth <= 480) {
-        gridSize = window.innerWidth * 0.06; // 约23px (390*0.06)
+        gridSize = window.innerWidth * 0.06;
     } else if (window.innerWidth <= 400) {
         gridSize = window.innerWidth * 0.065;
     } else if (window.innerWidth <= 360) {
         gridSize = window.innerWidth * 0.07;
     }
-
-    console.log('updateBlockedStates - gridSize:', gridSize, '卡片数:', gameState.tiles.length);
 
     gameState.tiles.forEach(tile => {
         tile.blocked = false;
@@ -2340,20 +2338,14 @@ function updateBlockedStates() {
             // 只有真正重叠时才算遮挡
             if (dx < gridSize && dy < gridSize) {
                 tile.blocked = true;
-                console.log(`卡片 ${tile.id.substr(0,15)} 被 ${other.id.substr(0,15)} 遮挡 (dx:${dx.toFixed(0)}, dy:${dy.toFixed(0)}, layer: ${other.layer})`);
                 break;
             }
         }
     });
-
-    const blockedCount = gameState.tiles.filter(t => t.blocked).length;
-    console.log('blocked状态:', blockedCount, '/', gameState.tiles.length, '张被遮挡');
 }
 
 // ==================== 渲染 ====================
 function renderTiles() {
-    console.log('renderTiles - 卡片数量:', gameState.tiles.length);
-
     // 使用DocumentFragment批量插入，提高性能
     const fragment = document.createDocumentFragment();
     const sortedTiles = [...gameState.tiles].sort((a, b) => a.layer - b.layer);
@@ -2387,8 +2379,6 @@ function renderTiles() {
             el.classList.add('clickable');
         }
 
-        console.log(`渲染卡片 ${tile.id.substr(0,10)} - blocked: ${tile.blocked}, clickable: ${!tile.blocked}`);
-
         // 新卡片动画
         if (tile.isNew) {
             el.style.animation = 'tileAppear 0.5s ease-out';
@@ -2400,8 +2390,6 @@ function renderTiles() {
 
     elements.tilesContainer.innerHTML = '';
     elements.tilesContainer.appendChild(fragment);
-
-    console.log('渲染完成');
 }
 
 function renderSlots() {
@@ -2459,12 +2447,7 @@ function updateTools() {
 
 // ==================== 交互 ====================
 function handleTileClick(tile) {
-    console.log('点击卡片:', tile, 'blocked:', tile.blocked, 'gameOver:', gameState.isGameOver);
-
-    if (gameState.isGameOver || tile.blocked) {
-        console.log('点击被阻止');
-        return;
-    }
+    if (gameState.isGameOver || tile.blocked) return;
 
     if (tile.special === 'strong') {
         tile.strength--;
@@ -2493,12 +2476,7 @@ function handleTileClick(tile) {
 
     document.getElementById('moves-count').textContent = gameState.moves;
 
-    console.log('更新前剩余卡片:', gameState.tiles.length);
-
     updateBlockedStates();
-
-    console.log('更新后blocked状态:', gameState.tiles.map(t => ({id: t.id, blocked: t.blocked})));
-
     renderTiles();
     renderSlots();
 

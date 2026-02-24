@@ -64,6 +64,189 @@ body {
     flex-direction: column;
 }
 
+/* 开始页面 */
+.start-screen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    overflow: hidden;
+}
+
+.start-content {
+    text-align: center;
+    z-index: 2;
+    animation: startFadeIn 1s ease-out;
+}
+
+@keyframes startFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.start-logo {
+    font-size: 100px;
+    margin-bottom: 20px;
+    animation: logoFloat 3s ease-in-out infinite;
+    filter: drop-shadow(0 10px 30px rgba(255, 215, 0, 0.5));
+}
+
+@keyframes logoFloat {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    25% {
+        transform: translateY(-15px) rotate(-5deg);
+    }
+    50% {
+        transform: translateY(0) rotate(0deg);
+    }
+    75% {
+        transform: translateY(-10px) rotate(5deg);
+    }
+}
+
+.start-title {
+    font-size: 56px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #ffd700, #ff6b00, #ffd700);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 15px;
+    animation: titleShine 3s ease-in-out infinite;
+    text-shadow: none;
+    filter: drop-shadow(0 4px 20px rgba(255, 215, 0, 0.4));
+}
+
+@keyframes titleShine {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.start-subtitle {
+    font-size: 18px;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 40px;
+}
+
+.start-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+}
+
+.start-btn {
+    padding: 18px 60px;
+    border: none;
+    border-radius: 30px;
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'Fredoka', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.start-btn.primary {
+    background: linear-gradient(145deg, #ffd700, #ff8c00);
+    color: #1a1a2e;
+    box-shadow: 0 8px 0 0 rgba(255, 140, 0, 0.3),
+                0 12px 30px rgba(255, 215, 0, 0.4);
+}
+
+.start-btn.primary:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 12px 0 0 rgba(255, 140, 0, 0.3),
+                0 20px 40px rgba(255, 215, 0, 0.6);
+}
+
+.start-btn.primary:active {
+    transform: translateY(-2px);
+}
+
+.start-btn.secondary {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    padding: 14px 40px;
+    font-size: 18px;
+}
+
+.start-btn.secondary:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,215,0,0.5);
+}
+
+/* 装饰元素 */
+.start-decoration {
+    position: absolute;
+    pointer-events: none;
+}
+
+.start-coin {
+    position: absolute;
+    font-size: 40px;
+    animation: coinFloat 4s ease-in-out infinite;
+}
+
+@keyframes coinFloat {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.6;
+    }
+    50% {
+        transform: translateY(-30px) rotate(180deg);
+        opacity: 1;
+    }
+}
+
+.start-coin:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
+.start-coin:nth-child(2) { top: 20%; right: 15%; animation-delay: 1s; }
+.start-coin:nth-child(3) { bottom: 20%; left: 15%; animation-delay: 2s; }
+.start-coin:nth-child(4) { bottom: 15%; right: 10%; animation-delay: 0.5s; }
+.start-coin:nth-child(5) { top: 40%; left: 5%; animation-delay: 1.5s; }
+.start-coin:nth-child(6) { top: 60%; right: 8%; animation-delay: 2.5s; }
+
+/* 移动端适配 */
+@media (max-width: 480px) {
+    .start-logo {
+        font-size: 80px;
+    }
+    .start-title {
+        font-size: 42px;
+    }
+    .start-subtitle {
+        font-size: 15px;
+    }
+    .start-btn {
+        padding: 15px 50px;
+        font-size: 20px;
+    }
+    .start-coin {
+        font-size: 30px;
+    }
+}
+
 /* 关卡选择 */
 .level-select-screen {
     position: fixed;
@@ -1219,8 +1402,34 @@ body {
 <div class="stars-bg" id="stars-bg"></div>
 <div class="bg-pattern"></div>
 
+<!-- 开始页面 -->
+<div id="start-screen" class="start-screen">
+    <!-- 装饰金币 -->
+    <div class="start-coin">💰</div>
+    <div class="start-coin">🪙</div>
+    <div class="start-coin">💎</div>
+    <div class="start-coin">🏆</div>
+    <div class="start-coin">⭐</div>
+    <div class="start-coin">🎰</div>
+
+    <div class="start-content">
+        <div class="start-logo">🐴</div>
+        <h1 class="start-title">马上发财</h1>
+        <p class="start-subtitle">三连消除 · 进化合成 · 赢取奖励</p>
+
+        <div class="start-buttons">
+            <button class="start-btn primary" onclick="startGame()">
+                🎮 开始游戏
+            </button>
+            <button class="start-btn secondary" onclick="connectWalletFromStart()">
+                🦊 连接钱包
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- 关卡选择界面 -->
-<div id="level-select" class="level-select-screen">
+<div id="level-select" class="level-select-screen" style="display: none;">
     <div class="level-select-header">
         <h1>🐴 马上发财</h1>
         <p>点击卡片自动进入卡槽，三连消除</p>
@@ -1837,10 +2046,31 @@ function init() {
     elements.tilesContainer = document.getElementById('tiles-container');
     elements.modal = document.getElementById('modal');
     elements.starsBg = document.getElementById('stars-bg');
+    elements.startScreen = document.getElementById('start-screen');
 
     loadProgress();
     createStars();
+    showStartScreen();
+}
+
+// 显示开始页面
+function showStartScreen() {
+    elements.startScreen.style.display = 'flex';
+    elements.levelSelect.style.display = 'none';
+    elements.app.style.display = 'none';
+}
+
+// 从开始页面开始游戏
+function startGame() {
+    elements.startScreen.style.display = 'none';
     showLevelSelect();
+    playSound('click');
+    if (navigator.vibrate) navigator.vibrate(50);
+}
+
+// 从开始页面连接钱包
+function connectWalletFromStart() {
+    connectWallet();
 }
 
 function createStars() {

@@ -2313,35 +2313,9 @@ function layoutTiles(tiles, maxLayers) {
 }
 
 function updateBlockedStates() {
-    // 减小 gridSize 让更多卡片可点击 - 只有真正完全重叠的才被遮挡
-    let gridSize = CONFIG.TILE_SIZE / 3; // 从40改为约27px
-
-    // 移动端调整 - 更小的值
-    if (window.innerWidth <= 480) {
-        gridSize = window.innerWidth * 0.045; // 约17-19px
-    } else if (window.innerWidth <= 400) {
-        gridSize = window.innerWidth * 0.05;
-    } else if (window.innerWidth <= 360) {
-        gridSize = window.innerWidth * 0.055;
-    }
-
+    // 移除遮挡检测 - 所有卡片都可以点击
     gameState.tiles.forEach(tile => {
         tile.blocked = false;
-
-        for (const other of gameState.tiles) {
-            if (other.id === tile.id) continue;
-            // 只有上层的卡片能遮挡下层的
-            if (other.layer <= tile.layer) continue;
-
-            const dx = Math.abs(other.x - tile.x);
-            const dy = Math.abs(other.y - tile.y);
-
-            // 缩小遮挡范围，只有真正重叠时才算遮挡
-            if (dx < gridSize && dy < gridSize) {
-                tile.blocked = true;
-                break;
-            }
-        }
     });
 }
 

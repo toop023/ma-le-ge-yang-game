@@ -2313,12 +2313,16 @@ function layoutTiles(tiles, maxLayers) {
 }
 
 function updateBlockedStates() {
-    // 动态获取网格尺寸
-    let gridSize = CONFIG.GRID_SIZE;
-    if (window.innerWidth <= 400) {
-        gridSize = window.innerWidth * 0.08;
+    // 动态获取网格尺寸 - 使用卡片实际大小的一半作为检测阈值
+    let gridSize = CONFIG.TILE_SIZE / 2; // 从60改为40（80/2）
+
+    // 移动端调整
+    if (window.innerWidth <= 480) {
+        gridSize = window.innerWidth * 0.06; // 约23px (390*0.06)
+    } else if (window.innerWidth <= 400) {
+        gridSize = window.innerWidth * 0.065;
     } else if (window.innerWidth <= 360) {
-        gridSize = window.innerWidth * 0.09;
+        gridSize = window.innerWidth * 0.07;
     }
 
     console.log('updateBlockedStates - gridSize:', gridSize, '卡片数:', gameState.tiles.length);
@@ -2333,15 +2337,17 @@ function updateBlockedStates() {
             const dx = Math.abs(other.x - tile.x);
             const dy = Math.abs(other.y - tile.y);
 
+            // 只有真正重叠时才算遮挡
             if (dx < gridSize && dy < gridSize) {
                 tile.blocked = true;
-                console.log(`卡片 ${tile.id} 被 ${other.id} 遮挡 (layer: ${other.layer})`);
+                console.log(`卡片 ${tile.id.substr(0,15)} 被 ${other.id.substr(0,15)} 遮挡 (dx:${dx.toFixed(0)}, dy:${dy.toFixed(0)}, layer: ${other.layer})`);
                 break;
             }
         }
     });
 
-    console.log('blocked状态:', gameState.tiles.map(t => ({id: t.id.substr(0,15), blocked: t.blocked})));
+    const blockedCount = gameState.tiles.filter(t => t.blocked).length;
+    console.log('blocked状态:', blockedCount, '/', gameState.tiles.length, '张被遮挡');
 }
 
 // ==================== 渲染 ====================

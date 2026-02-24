@@ -680,6 +680,67 @@ body {
 .tile.layer-5 { z-index: 6; }
 .tile.layer-6 { z-index: 7; }
 
+/* 进化卡牌样式 */
+.tile.level-2 {
+    box-shadow: 0 0 15px rgba(100, 200, 255, 0.6), 0 5px 10px rgba(0,0,0,0.25) !important;
+    border: 2px solid rgba(100, 200, 255, 0.5);
+}
+
+.tile.level-3 {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.7), 0 5px 10px rgba(0,0,0,0.25) !important;
+    border: 2px solid rgba(255, 215, 0, 0.6);
+    animation: epicGlow 2s ease-in-out infinite;
+}
+
+.tile.level-4 {
+    box-shadow: 0 0 25px rgba(255, 100, 100, 0.8), 0 5px 10px rgba(0,0,0,0.25) !important;
+    border: 3px solid rgba(255, 100, 100, 0.7);
+    animation: legendaryGlow 1.5s ease-in-out infinite;
+}
+
+.tile.level-4::before {
+    content: '👑';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 14px;
+    animation: crownBounce 1s ease-in-out infinite;
+}
+
+@keyframes epicGlow {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.3); }
+}
+
+@keyframes legendaryGlow {
+    0%, 100% {
+        box-shadow: 0 0 25px rgba(255, 100, 100, 0.8), 0 5px 10px rgba(0,0,0,0.25);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(255, 100, 100, 1), 0 5px 10px rgba(0,0,0,0.25);
+        transform: scale(1.05);
+    }
+}
+
+@keyframes crownBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* 进化卡槽样式 */
+.slot.level-2 {
+    box-shadow: inset 0 0 10px rgba(100, 200, 255, 0.4);
+}
+
+.slot.level-3 {
+    box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.slot.level-4 {
+    box-shadow: inset 0 0 20px rgba(255, 100, 100, 0.6);
+}
+
 /* 提示高亮效果 */
 .tile.hint-highlight {
     animation: hintPulse 0.8s ease-in-out 3;
@@ -1067,6 +1128,9 @@ body {
             <div class="header-stat">
                 步数 <span class="value" id="moves-count">0</span>
             </div>
+            <div class="header-stat">
+                进化 <span class="value" id="evolution-count">0</span>
+            </div>
         </div>
         <button class="wallet-btn" id="wallet-btn" onclick="connectWallet()">
             🦊 连接钱包
@@ -1435,26 +1499,97 @@ async function buyWithToken(token) {
 }
 
 // ==================== 马场主题卡片 ====================
+// 进化链配置：基础ID -> 进化后的卡片配置
+const EVOLUTION_CHAINS = {
+    'horse': {
+        levels: [
+            { id: 'horse', emoji: '🐴', name: '小马', level: 1 },
+            { id: 'horse_lv2', emoji: '🦄', name: '独角兽', level: 2 },
+            { id: 'horse_lv3', emoji: '🐲', name: '龙马', level: 3 },
+            { id: 'horse_lv4', emoji: '🏇', name: '神马', level: 4, legendary: true }
+        ]
+    },
+    'carrot': {
+        levels: [
+            { id: 'carrot', emoji: '🥕', name: '小胡萝卜', level: 1 },
+            { id: 'carrot_lv2', emoji: '🥕', name: '大胡萝卜', level: 2 },
+            { id: 'carrot_lv3', emoji: '🌟', name: '金胡萝卜', level: 3, legendary: true }
+        ]
+    },
+    'hay': {
+        levels: [
+            { id: 'hay', emoji: '🌾', name: '小干草', level: 1 },
+            { id: 'hay_lv2', emoji: '🌾', name: '大干草', level: 2 },
+            { id: 'hay_lv3', emoji: '⭐', name: '神之干草', level: 3, legendary: true }
+        ]
+    },
+    'coin': {
+        levels: [
+            { id: 'coin', emoji: '💰', name: '铜币', level: 1 },
+            { id: 'coin_lv2', emoji: '💎', name: '银币', level: 2 },
+            { id: 'coin_lv3', emoji: '👑', name: '金币', level: 3, legendary: true }
+        ]
+    },
+    'trophy': {
+        levels: [
+            { id: 'trophy', emoji: '🏆', name: '铜奖杯', level: 1 },
+            { id: 'trophy_lv2', emoji: '🏅', name: '银奖杯', level: 2 },
+            { id: 'trophy_lv3', emoji: '👑', name: '金奖杯', level: 3, legendary: true }
+        ]
+    }
+};
+
+// 获取卡片进化后的下一级
+function getNextEvolution(tileId) {
+    // 查找基础ID（去掉_lv后缀）
+    const baseId = tileId.split('_lv')[0];
+    const chain = EVOLUTION_CHAINS[baseId];
+
+    if (!chain) return null;
+
+    // 查找当前等级
+    const currentLevel = parseInt(tileId.split('_lv')[1] || '1');
+    const nextLevel = currentLevel + 1;
+
+    if (nextLevel <= chain.levels.length) {
+        return chain.levels[nextLevel - 1];
+    }
+
+    return null; // 已达到最高级
+}
+
+// 获取卡片的基础ID
+function getBaseId(tileId) {
+    return tileId.split('_lv')[0];
+}
+
+// 检查是否可进化
+function canEvolve(tileId) {
+    return getNextEvolution(tileId) !== null;
+}
+
 const TILE_TYPES = [
-    { id: 'horse', emoji: '🐴', name: '赛马' },
-    { id: 'carrot', emoji: '🥕', name: '胡萝卜' },
-    { id: 'hay', emoji: '🌾', name: '干草' },
-    { id: 'saddle', emoji: '🩺', name: '马鞍' },
-    { id: 'whip', emoji: '🎗️', name: '马鞭' },
-    { id: 'boot', emoji: '🧲', name: '马靴' },
-    { id: 'race', emoji: '🏇', name: '比赛' },
-    { id: 'trophy', emoji: '🏆', name: '奖杯' },
-    { id: 'ticket', emoji: '🎫', name: '门票' },
-    { id: 'coin', emoji: '💰', name: '金币' },
-    { id: 'fence', emoji: '🚧', name: '栅栏' },
-    { id: 'water', emoji: '💧', name: '水槽' },
-    { id: 'rider', emoji: '👨‍🌾', name: '骑师' },
-    { id: 'bell', emoji: '🔔', name: '铃铛' },
-    { id: 'number', emoji: '🔢', name: '号码布' },
-    { id: 'barn', emoji: '🏟️', name: '马厩' },
-    { id: 'grass', emoji: '🌿', name: '牧场' },
-    { id: 'gate', emoji: '🚪', name: '马门' },
-    { id: 'stable', emoji: '🏠️', name: '马房' }
+    // 基础卡片
+    { id: 'horse', emoji: '🐴', name: '小马', evolvable: true },
+    { id: 'carrot', emoji: '🥕', name: '胡萝卜', evolvable: true },
+    { id: 'hay', emoji: '🌾', name: '干草', evolvable: true },
+    { id: 'coin', emoji: '💰', name: '金币', evolvable: true },
+    { id: 'trophy', emoji: '🏆', name: '奖杯', evolvable: true },
+    // 不可进化卡片
+    { id: 'saddle', emoji: '🩺', name: '马鞍', evolvable: false },
+    { id: 'whip', emoji: '🎗️', name: '马鞭', evolvable: false },
+    { id: 'boot', emoji: '🧲', name: '马靴', evolvable: false },
+    { id: 'race', emoji: '🏇', name: '比赛', evolvable: false },
+    { id: 'ticket', emoji: '🎫', name: '门票', evolvable: false },
+    { id: 'fence', emoji: '🚧', name: '栅栏', evolvable: false },
+    { id: 'water', emoji: '💧', name: '水槽', evolvable: false },
+    { id: 'rider', emoji: '👨‍🌾', name: '骑师', evolvable: false },
+    { id: 'bell', emoji: '🔔', name: '铃铛', evolvable: false },
+    { id: 'number', emoji: '🔢', name: '号码布', evolvable: false },
+    { id: 'barn', emoji: '🏟️', name: '马厩', evolvable: false },
+    { id: 'grass', emoji: '🌿', name: '牧场', evolvable: false },
+    { id: 'gate', emoji: '🚪', name: '马门', evolvable: false },
+    { id: 'stable', emoji: '🏠️', name: '马房', evolvable: false }
 ];
 
 // ==================== 关卡配置 ====================
@@ -1670,6 +1805,7 @@ function startLevel(levelNum) {
     gameState.combo = 0;
     gameState.maxCombo = 0;
     gameState.totalMatches = 0;
+    gameState.evolutions = 0;
     gameState.isGameOver = false;
     gameState.history = [];
     gameState.tools = { undo: 3, shuffle: 2, remove: 1, hint: 3 };
@@ -1682,6 +1818,7 @@ function startLevel(levelNum) {
 
     document.getElementById('current-level').textContent = levelNum;
     document.getElementById('moves-count').textContent = '0';
+    document.getElementById('evolution-count').textContent = '0';
 
     renderSlots();
     renderTiles();
@@ -1838,6 +1975,12 @@ function renderTiles() {
     sortedTiles.forEach(tile => {
         const el = document.createElement('div');
         el.className = `tile layer-${tile.layer}`;
+
+        // 添加等级样式
+        if (tile.level) {
+            el.classList.add(`level-${tile.level}`);
+        }
+
         el.style.left = tile.x + 'px';
         el.style.top = tile.y + 'px';
         el.dataset.type = tile.type;
@@ -1858,6 +2001,12 @@ function renderTiles() {
             el.classList.add('clickable');
         }
 
+        // 新卡片动画
+        if (tile.isNew) {
+            el.style.animation = 'tileAppear 0.5s ease-out';
+            tile.isNew = false;
+        }
+
         el.onclick = () => handleTileClick(tile);
         fragment.appendChild(el);
     });
@@ -1876,6 +2025,12 @@ function renderSlots() {
 
         if (gameState.slots[i]) {
             slot.classList.add('filled');
+
+            // 添加等级样式
+            if (gameState.slots[i].level) {
+                slot.classList.add(`level-${gameState.slots[i].level}`);
+            }
+
             slot.textContent = gameState.slots[i].emoji;
             if (gameState.slots[i].special === 'wild') {
                 slot.classList.add('wild');
@@ -1992,12 +2147,37 @@ function checkMatches() {
             }
             gameState.totalMatches++;
 
-            playSound('match');
-            if (navigator.vibrate) navigator.vibrate([25, 40, 25]);
+            // 检查是否可进化
+            const matchType = s1.type;
+            const nextEvolution = getNextEvolution(matchType);
 
-            if (gameState.combo >= 2) {
+            if (nextEvolution) {
+                // 进化系统：三张相同卡片合并成更高级
                 playSound('combo');
-                showCombo(gameState.combo);
+                showEvolutionEffect(nextEvolution);
+                if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+
+                // 创建进化后的卡片并加入游戏区域
+                const evolvedTile = createEvolvedTile(nextEvolution);
+                gameState.tiles.push(evolvedTile);
+                updateBlockedStates();
+                renderTiles();
+
+                showToast(`✨ 进化：${nextEvolution.emoji} ${nextEvolution.name}！`);
+
+                // 记录进化
+                gameState.evolutions = gameState.evolutions || 0;
+                gameState.evolutions++;
+                document.getElementById('evolution-count').textContent = gameState.evolutions;
+            } else {
+                // 普通消除
+                playSound('match');
+                if (navigator.vibrate) navigator.vibrate([25, 40, 25]);
+
+                if (gameState.combo >= 2) {
+                    playSound('combo');
+                    showCombo(gameState.combo);
+                }
             }
 
             // 消除动画
@@ -2026,6 +2206,38 @@ function checkMatches() {
     if (foundMatch && !gameState.isGameOver) {
         setTimeout(() => checkMatches(), 150);
     }
+}
+
+// 创建进化后的卡片
+function createEvolvedTile(evolutionData) {
+    const container = elements.tilesContainer;
+    const rect = container.getBoundingClientRect();
+    const centerX = (rect.width || 340) / 2 - CONFIG.TILE_SIZE / 2;
+    const centerY = (rect.height || 380) / 2 - CONFIG.TILE_SIZE / 2;
+
+    return {
+        id: `tile_${Date.now()}_${Math.random()}`,
+        type: evolutionData.id,
+        emoji: evolutionData.emoji,
+        level: evolutionData.level,
+        legendary: evolutionData.legendary || false,
+        x: centerX + (Math.random() - 0.5) * 100,
+        y: centerY + (Math.random() - 0.5) * 100,
+        layer: Math.floor(Math.random() * 3),
+        blocked: false,
+        special: null,
+        isNew: true
+    };
+}
+
+// 显示进化效果
+function showEvolutionEffect(evolution) {
+    const effectEl = document.createElement('div');
+    effectEl.id = 'combo-display';
+    effectEl.innerHTML = `✨ 进化！<br>${evolution.emoji} ${evolution.name}`;
+    effectEl.style.fontSize = '42px';
+    document.body.appendChild(effectEl);
+    setTimeout(() => effectEl.remove(), 1500);
 }
 
 function showCombo(count) {

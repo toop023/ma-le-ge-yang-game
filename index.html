@@ -2321,6 +2321,8 @@ function updateBlockedStates() {
         gridSize = window.innerWidth * 0.09;
     }
 
+    console.log('updateBlockedStates - gridSize:', gridSize, '卡片数:', gameState.tiles.length);
+
     gameState.tiles.forEach(tile => {
         tile.blocked = false;
 
@@ -2333,14 +2335,19 @@ function updateBlockedStates() {
 
             if (dx < gridSize && dy < gridSize) {
                 tile.blocked = true;
+                console.log(`卡片 ${tile.id} 被 ${other.id} 遮挡 (layer: ${other.layer})`);
                 break;
             }
         }
     });
+
+    console.log('blocked状态:', gameState.tiles.map(t => ({id: t.id.substr(0,15), blocked: t.blocked})));
 }
 
 // ==================== 渲染 ====================
 function renderTiles() {
+    console.log('renderTiles - 卡片数量:', gameState.tiles.length);
+
     // 使用DocumentFragment批量插入，提高性能
     const fragment = document.createDocumentFragment();
     const sortedTiles = [...gameState.tiles].sort((a, b) => a.layer - b.layer);
@@ -2374,6 +2381,8 @@ function renderTiles() {
             el.classList.add('clickable');
         }
 
+        console.log(`渲染卡片 ${tile.id.substr(0,10)} - blocked: ${tile.blocked}, clickable: ${!tile.blocked}`);
+
         // 新卡片动画
         if (tile.isNew) {
             el.style.animation = 'tileAppear 0.5s ease-out';
@@ -2385,6 +2394,8 @@ function renderTiles() {
 
     elements.tilesContainer.innerHTML = '';
     elements.tilesContainer.appendChild(fragment);
+
+    console.log('渲染完成');
 }
 
 function renderSlots() {
@@ -2442,7 +2453,12 @@ function updateTools() {
 
 // ==================== 交互 ====================
 function handleTileClick(tile) {
-    if (gameState.isGameOver || tile.blocked) return;
+    console.log('点击卡片:', tile, 'blocked:', tile.blocked, 'gameOver:', gameState.isGameOver);
+
+    if (gameState.isGameOver || tile.blocked) {
+        console.log('点击被阻止');
+        return;
+    }
 
     if (tile.special === 'strong') {
         tile.strength--;
@@ -2471,7 +2487,12 @@ function handleTileClick(tile) {
 
     document.getElementById('moves-count').textContent = gameState.moves;
 
+    console.log('更新前剩余卡片:', gameState.tiles.length);
+
     updateBlockedStates();
+
+    console.log('更新后blocked状态:', gameState.tiles.map(t => ({id: t.id, blocked: t.blocked})));
+
     renderTiles();
     renderSlots();
 

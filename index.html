@@ -2282,16 +2282,16 @@ function layoutTiles(tiles, maxLayers) {
     // 动态获取卡片尺寸
     let tileSize = CONFIG.TILE_SIZE;
     if (window.innerWidth <= 400) {
-        tileSize = window.innerWidth * 0.11; // 移动端使用 vw
+        tileSize = window.innerWidth * 0.11;
     } else if (window.innerWidth <= 360) {
-        tileSize = window.innerWidth * 0.12; // 小屏手机
+        tileSize = window.innerWidth * 0.12;
     }
 
     const centerX = (rect.width || 340) / 2 - tileSize / 2;
     const centerY = (rect.height || 380) / 2 - tileSize / 2;
 
-    // 使用改进的螺旋布局，减少重叠
-    const baseSpacing = tileSize + 4;
+    // 增大间距减少重叠
+    const baseSpacing = tileSize + 25; // 从 tileSize+4 改为 tileSize+25
     const tilesPerLayer = Math.ceil(tiles.length / maxLayers);
 
     tiles.forEach((tile, index) => {
@@ -2299,10 +2299,10 @@ function layoutTiles(tiles, maxLayers) {
         const posInLayer = index % tilesPerLayer;
         const totalInLayer = Math.min(tilesPerLayer, tiles.length - layer * tilesPerLayer);
 
-        // 螺旋布局
+        // 螺旋布局 - 增大间距
         const angle = (posInLayer / totalInLayer) * Math.PI * 2;
-        const layerOffset = layer * 12;
-        const radius = layerOffset + Math.sqrt(posInLayer) * baseSpacing * 0.8;
+        const layerOffset = layer * 20; // 从 12 增加到 20
+        const radius = layerOffset + Math.sqrt(posInLayer) * baseSpacing;
 
         tile.x = centerX + Math.cos(angle) * radius - CONFIG.TILE_SIZE / 2;
         tile.y = centerY + Math.sin(angle) * radius * 0.7 - CONFIG.TILE_SIZE / 2;

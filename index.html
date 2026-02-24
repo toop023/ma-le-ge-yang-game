@@ -2102,7 +2102,7 @@ function renderTiles() {
     const fragment = document.createDocumentFragment();
     const sortedTiles = [...gameState.tiles].sort((a, b) => a.layer - b.layer);
 
-    sortedTiles.forEach(tile => {
+    sortedTiles.forEach((tile, index) => {
         const el = document.createElement('div');
         el.className = `tile layer-${tile.layer}`;
 
@@ -2137,7 +2137,15 @@ function renderTiles() {
             tile.isNew = false;
         }
 
-        el.onclick = () => handleTileClick(tile);
+        // 使用闭包绑定正确的 tile
+        el.onclick = (function(currentTile) {
+            return function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                handleTileClick(currentTile);
+            };
+        })(tile);
+
         fragment.appendChild(el);
     });
 

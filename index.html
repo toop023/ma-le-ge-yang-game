@@ -500,43 +500,58 @@ body {
     width: 80px;
     height: 80px;
     position: absolute;
-    border-radius: 16px;
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 42px;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow:
-        0 5px 10px rgba(0,0,0,0.25),
-        0 7px 0 0 rgba(0,0,0,0.12),
-        inset 0 -2px 4px rgba(255,255,255,0.3),
-        inset 0 2px 4px rgba(0,0,0,0.1);
+        0 8px 20px rgba(0,0,0,0.3),
+        0 3px 0 0 rgba(0,0,0,0.15),
+        inset 0 2px 0 rgba(255,255,255,0.2),
+        inset 0 -2px 0 rgba(0,0,0,0.1);
     will-change: transform;
+    position: relative;
+    overflow: hidden;
 }
+/* 卡片内光效 */
+.tile::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%);
+    border-radius: 18px 18px 0 0;
+    pointer-events: none;
+}
+/* 卡片边框装饰 */
 .tile::after {
     content: '';
     position: absolute;
     inset: 3px;
-    border-radius: 8px;
-    background: inherit;
-    opacity: 0.3;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.2);
+    pointer-events: none;
 }
 .tile:active {
-    transform: scale(0.92);
+    transform: scale(0.90);
 }
 .tile.clickable {
     cursor: pointer;
-    animation: tileFloat 2s ease-in-out infinite;
+    animation: tileFloat 2.5s ease-in-out infinite;
 }
 @keyframes tileFloat {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
+    50% { transform: translateY(-3px); }
 }
 .tile.blocked {
     cursor: not-allowed;
-    filter: brightness(0.5);
-    opacity: 0.8;
+    filter: brightness(0.5) saturate(0.7);
+    opacity: 0.85;
 }
 .tile.blocked::after {
     content: '';
@@ -546,81 +561,81 @@ body {
         45deg,
         transparent,
         transparent 4px,
-        rgba(0,0,0,0.15) 4px,
-        rgba(0,0,0,0.15) 8px
+        rgba(0,0,0,0.2) 4px,
+        rgba(0,0,0,0.2) 8px
     );
     border-radius: 10px;
 }
 
-/* 卡片类型样式 */
+/* 卡片类型样式 - 精美渐变设计 */
 .tile[data-type="horse"] {
-    background: linear-gradient(145deg, #8B4513, #A0522D);
-    box-shadow: 0 4px 8px rgba(139, 69, 19, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #9B59B6 0%, #8E44AD 50%, #6C3483 100%);
+    box-shadow: 0 8px 20px rgba(155, 89, 182, 0.4);
 }
 .tile[data-type="carrot"] {
-    background: linear-gradient(145deg, #FF8C00, #FF6B00);
-    box-shadow: 0 4px 8px rgba(255, 140, 0, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #FF9F43 0%, #FF6B35 50%, #EE5A24 100%);
+    box-shadow: 0 8px 20px rgba(255, 159, 67, 0.4);
 }
 .tile[data-type="hay"] {
-    background: linear-gradient(145deg, #DAA520, #B8860B);
-    box-shadow: 0 4px 8px rgba(218, 165, 32, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #F39C12 0%, #E67E22 50%, #D68910 100%);
+    box-shadow: 0 8px 20px rgba(243, 156, 18, 0.4);
 }
 .tile[data-type="saddle"] {
-    background: linear-gradient(145deg, #654321, #8B4513);
-    box-shadow: 0 4px 8px rgba(101, 67, 33, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #6B3E0A 100%);
+    box-shadow: 0 8px 20px rgba(139, 69, 19, 0.4);
 }
 .tile[data-type="whip"] {
-    background: linear-gradient(145deg, #8B0000, #A52A2A);
-    box-shadow: 0 4px 8px rgba(139, 0, 0, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #E74C3C 0%, #C0392B 50%, #922B21 100%);
+    box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
 }
 .tile[data-type="boot"] {
-    background: linear-gradient(145deg, #2F4F4F, #3A5F5F);
-    box-shadow: 0 4px 8px rgba(47, 79, 79, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #34495E 0%, #2C3E50 50%, #1A252F 100%);
+    box-shadow: 0 8px 20px rgba(52, 73, 94, 0.4);
 }
 .tile[data-type="race"] {
-    background: linear-gradient(145deg, #228B22, #32CD32);
-    box-shadow: 0 4px 8px rgba(34, 205, 50, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #27AE60 0%, #229954 50%, #1E8449 100%);
+    box-shadow: 0 8px 20px rgba(39, 174, 96, 0.4);
 }
 .tile[data-type="trophy"] {
-    background: linear-gradient(145deg, #FFD700, #FFA500);
-    box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #F4D03F 0%, #F7DC6F 30%, #F1C40F 70%, #B7950B 100%);
+    box-shadow: 0 8px 25px rgba(244, 208, 63, 0.5);
 }
 .tile[data-type="ticket"] {
-    background: linear-gradient(145deg, #4682B4, #5A9BD4);
-    box-shadow: 0 4px 8px rgba(70, 154, 212, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #3498DB 0%, #2980B9 50%, #1F618D 100%);
+    box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
 }
 .tile[data-type="coin"] {
-    background: linear-gradient(145deg, #FFD700, #FFC125);
-    box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #F7DC6F 0%, #F4D03F 30%, #D4AC0D 100%);
+    box-shadow: 0 8px 25px rgba(247, 220, 111, 0.5);
 }
 .tile[data-type="fence"] {
-    background: linear-gradient(145deg, #8B4513, #A0522D);
-    box-shadow: 0 4px 8px rgba(139, 69, 19, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #7B241C 0%, #943126 50%, #641E16 100%);
+    box-shadow: 0 8px 20px rgba(123, 36, 28, 0.4);
 }
 .tile[data-type="water"] {
-    background: linear-gradient(145deg, #1E90FF, #4169E1);
-    box-shadow: 0 4px 8px rgba(30, 144, 241, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #5DADE2 0%, #3498DB 50%, #2874A6 100%);
+    box-shadow: 0 8px 20px rgba(93, 173, 226, 0.4);
 }
 .tile[data-type="rider"] {
-    background: linear-gradient(145deg, #DC143C, #FF4500);
-    box-shadow: 0 4px 8px rgba(220, 20, 0, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #EC7063 0%, #E74C3C 50%, #CB4335 100%);
+    box-shadow: 0 8px 20px rgba(236, 112, 99, 0.4);
 }
 .tile[data-type="bell"] {
-    background: linear-gradient(145deg, #FFD700, #DAA520);
-    box-shadow: 0 4px 8px rgba(218, 165, 32, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #F8C471 0%, #F5B041 50%, #DC7633 100%);
+    box-shadow: 0 8px 20px rgba(248, 196, 113, 0.4);
 }
 .tile[data-type="number"] {
-    background: linear-gradient(145deg, #FFFFFF, #F0F0F0);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(0,0,0,0.2);
-    color: #1a1a2e;
+    background: linear-gradient(135deg, #ECF0F1 0%, #D5DBDB 50%, #BDC3C7 100%);
+    box-shadow: 0 8px 20px rgba(189, 195, 199, 0.4);
+    color: #2C3E50;
 }
 .tile[data-type="barn"] {
-    background: linear-gradient(145deg, #8B4513, #A0522D);
-    box-shadow: 0 4px 8px rgba(139, 69, 19, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #A04000 0%, #922B21 50%, #7B241C 100%);
+    box-shadow: 0 8px 20px rgba(160, 64, 0, 0.4);
 }
 .tile[data-type="grass"] {
-    background: linear-gradient(145deg, #228B22, #2E8B57);
-    box-shadow: 0 4px 8px rgba(34, 139, 34, 0.3), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #58D68D 0%, #52BE80 50%, #27AE60 100%);
+    box-shadow: 0 8px 20px rgba(88, 214, 141, 0.4);
 }
 .tile[data-type="gate"] {
     background: linear-gradient(145deg, #4A4A4A, #6A6A6A);
@@ -987,10 +1002,10 @@ body {
         font-size: 14px;
     }
     .level-select-header h1 {
-        font-size: 38px;
+        font-size: 36px;
     }
     .level-select-header p {
-        font-size: 14px;
+        font-size: 13px;
     }
     .level-btn {
         font-size: 20px;
@@ -1001,68 +1016,91 @@ body {
         padding: 12px;
     }
     .stat-item .value {
-        font-size: 24px;
+        font-size: 22px;
     }
     .tile {
-        width: 16vw;
-        height: 16vw;
-        font-size: 8.5vw;
-        border-radius: 12px;
+        width: 15vw;
+        height: 15vw;
+        font-size: 8vw;
+        border-radius: 14px;
     }
     .slot {
-        font-size: 8vw;
-        border-radius: 12px;
+        font-size: 7.5vw;
+        border-radius: 14px;
     }
     .tool-btn {
-        width: 17vw;
-        height: 17vw;
-        font-size: 7vw;
+        width: 16vw;
+        height: 16vw;
+        font-size: 6.5vw;
         border-radius: 12px;
     }
     .tool-btn .count {
-        font-size: 11px;
-        padding: 3px 5px;
-        min-width: 18px;
+        font-size: 10px;
+        padding: 2px 4px;
+        min-width: 16px;
     }
     #slots-area {
-        padding: 8px 15px;
+        padding: 6px 12px;
     }
     #slots {
-        gap: 5px;
+        gap: 4px;
     }
     #tools-area {
-        padding: 10px 15px 20px;
-        gap: 10px;
+        padding: 8px 12px 18px;
+        gap: 8px;
     }
     .game-header {
-        padding: 12px 15px;
+        padding: 10px 12px;
+        gap: 8px;
     }
     .menu-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
     }
     .header-stat {
-        padding: 6px 12px;
-        font-size: 12px;
-    }
-    .wallet-btn {
-        padding: 6px 12px;
+        padding: 5px 10px;
         font-size: 11px;
     }
+    .wallet-btn {
+        padding: 5px 10px;
+        font-size: 10px;
+    }
     #game-area {
-        min-height: 40vh;
+        min-height: 35vh;
+    }
+}
+
+/* 6.1英寸手机优化 (390-430px) */
+@media (min-width: 390px) and (max-width: 430px) {
+    .tile {
+        width: 14vw;
+        height: 14vw;
+        font-size: 7.5vw;
+    }
+    .slot {
+        font-size: 7vw;
+    }
+    .tool-btn {
+        width: 15vw;
+        height: 15vw;
+    }
+    #game-area {
+        min-height: 38vh;
+    }
+    .level-select-header h1 {
+        font-size: 40px;
     }
 }
 
 @media (max-width: 375px) {
     .tile {
-        width: 17vw;
-        height: 17vw;
-        font-size: 9vw;
+        width: 16vw;
+        height: 16vw;
+        font-size: 8.5vw;
     }
     .slot {
-        font-size: 8.5vw;
+        font-size: 8vw;
     }
     .level-select-header h1 {
         font-size: 32px;
@@ -1071,16 +1109,16 @@ body {
 
 @media (max-width: 360px) {
     .tile {
-        width: 18vw;
-        height: 18vw;
-        font-size: 9.5vw;
-    }
-    .slot {
+        width: 17vw;
+        height: 17vw;
         font-size: 9vw;
     }
+    .slot {
+        font-size: 8.5vw;
+    }
     .tool-btn {
-        width: 18vw;
-        height: 18vw;
+        width: 17vw;
+        height: 17vw;
     }
 }
 </style>
